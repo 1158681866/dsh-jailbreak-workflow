@@ -52,14 +52,21 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "lib/index.mjs",
-    "lib/client.js",
+    "assets/hero.en.png",
+    "assets/hero.zh.png",
+    "assets/icon-full.webp",
+    "assets/icon.webp",
+    "assets/poyazhi-canvas.webp",
+    "assets/poyazhi-flow.webp",
+    "assets/poyazhi-sidebar.webp",
+    "assets/versions.en.png",
+    "assets/versions.zh.png",
+    "assets/wordmark.png",
     "cordis.patch.yml",
+    "lib/client.js",
+    "lib/index.mjs",
     "lib/types/**/*.d.ts",
     "locale/*.json",
-    "assets/icon.webp",
-    "assets/icon-full.webp",
-    "assets/wordmark.png",
     "THIRD_PARTY_NOTICES.md"
   ],
   "dsh": {
