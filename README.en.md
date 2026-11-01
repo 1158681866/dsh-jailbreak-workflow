@@ -23,8 +23,6 @@ A soft-workflow plugin for [DeepSeek Harness](https://github.com/deepseek-ai/dee
 
 > **Experimental**: features and data formats are still changing, and any release may include breaking changes.
 
-**Documentation**: <https://xiaoso456.github.io/dsh-workflow-lite/> (installation, first steps, canvas display and settings, with screenshots).
-
 ![dsh-jailbreak-workflow hero: glowing whale with data bars](./assets/hero.en.png)
 
 [![Release line, see the changelog](./assets/versions.en.png)](./CHANGELOG.md)

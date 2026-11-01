@@ -23,8 +23,6 @@
 
 > **实验阶段**：功能和数据格式仍在调整，后续任何版本都可能包含不兼容的改动。
 
-**使用文档**：<https://xiaoso456.github.io/dsh-workflow-lite/>——安装、上手、画布展示和各项设置，带截图。
-
 ![dsh-jailbreak-workflow 主视觉：深蓝发光鲸鱼与数据柱状图](./assets/hero.zh.png)
 
 [![版本线，详见更新记录](./assets/versions.zh.png)](./CHANGELOG.md)
