@@ -45,8 +45,6 @@ The "破甲制作" research pipeline on the canvas — 15 steps chained into one
   </tr>
 </table>
 
-[![Release line, see the changelog](./assets/versions.en.png)](./CHANGELOG.md)
-
 ## 📦 Install
 
 Works with DeepSeek Harness 0.2.0 and 0.2.1, including their preview builds (such as 0.2.1-rc.2).
