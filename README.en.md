@@ -25,7 +25,7 @@ A soft-workflow plugin for [DeepSeek Harness](https://github.com/deepseek-ai/dee
 
 **Documentation**: <https://xiaoso456.github.io/dsh-workflow-lite/> (installation, first steps, canvas display and settings, with screenshots).
 
-![dsh-workflow-lite: canvas → plan prompt → model execution](./assets/hero.en.png)
+![dsh-jailbreak-workflow hero: glowing whale with data bars](./assets/hero.en.png)
 
 [![Release line, see the changelog](./assets/versions.en.png)](./CHANGELOG.md)
 
