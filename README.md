@@ -1,6 +1,6 @@
 <div align="center">
-  <img width="140" src="./assets/icon-full.webp" alt="dsh-workflow-lite 图标"><br>
-  <img width="360" src="./assets/wordmark.png" alt="dsh-workflow-lite">
+  <img width="140" src="./assets/icon-full.webp" alt="dsh-jailbreak-workflow 图标"><br>
+  <img width="360" src="./assets/wordmark.png" alt="dsh-jailbreak-workflow">
 </div>
 
 <div align="center">
