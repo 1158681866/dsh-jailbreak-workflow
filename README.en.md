@@ -20,6 +20,8 @@ A soft-workflow plugin for [DeepSeek Harness](https://github.com/deepseek-ai/dee
 
 > **Experimental**: features and data formats are still changing, and any release may include breaking changes.
 
+**Workflow packs**: [Minglink/dsh-jailbreak-workflows](https://github.com/Minglink/dsh-jailbreak-workflows) — ready-to-import `.wflite.zip` workflow packs; the "破甲制作" research pipeline is already up.
+
 ![dsh-jailbreak-workflow hero: glowing whale with data bars](./assets/hero.en.png)
 
 [![Release line, see the changelog](./assets/versions.en.png)](./CHANGELOG.md)
