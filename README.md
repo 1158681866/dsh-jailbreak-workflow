@@ -34,7 +34,6 @@
 
 <img src="./assets/poyazhi-sidebar.webp" width="300" alt="左侧步骤库：基础、常用步骤、我的步骤三组，拖到画布上使用">
 
-[![版本线，详见更新记录](./assets/versions.zh.png)](./CHANGELOG.md)
 
 ## 安装
 
