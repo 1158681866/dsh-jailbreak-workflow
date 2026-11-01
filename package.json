@@ -4,18 +4,18 @@
   "description": "Lightweight agent workflow for DeepSeek Harness: one workflow = one JSON (React Flow native) with prompts inline, compiled into a dispatch plan the model executes itself. No execution engine; optional per-workflow run state kept by the model in a YAML file.",
   "type": "module",
   "license": "MIT",
-  "author": "xiaoso",
+  "author": "Minglink",
   "publishConfig": {
     "access": "public",
     "tag": "latest"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xiaoso456/dsh-workflow-lite.git"
+    "url": "git+https://github.com/Minglink/dsh-jailbreak-workflow.git"
   },
-  "homepage": "https://xiaoso456.github.io/dsh-workflow-lite/",
+  "homepage": "https://github.com/Minglink/dsh-jailbreak-workflow",
   "bugs": {
-    "url": "https://github.com/xiaoso456/dsh-workflow-lite/issues"
+    "url": "https://github.com/Minglink/dsh-jailbreak-workflow/issues"
   },
   "sideEffects": [
     "lib/client.js"

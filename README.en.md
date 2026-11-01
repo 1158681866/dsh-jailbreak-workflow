@@ -11,11 +11,8 @@
 
 <div align="center">
 
-[![npm version](https://img.shields.io/npm/v/@xiaoso/dsh-workflow-lite.svg)](https://www.npmjs.com/package/@xiaoso/dsh-workflow-lite)
-[![license](https://img.shields.io/npm/l/@xiaoso/dsh-workflow-lite.svg)](./LICENSE)
-[![node](https://img.shields.io/node/v/@xiaoso/dsh-workflow-lite.svg)](https://nodejs.org)
+[![node](https://img.shields.io/badge/node-22%2B-339933.svg)](https://nodejs.org)
 [![DeepSeek Harness 0.2.x](https://img.shields.io/badge/DeepSeek%20Harness-0.2.x-4d6bfe.svg)](https://github.com/deepseek-ai/deepseek-harness)
-[![docs](https://img.shields.io/badge/docs-xiaoso456.github.io-3e7ce4.svg)](https://xiaoso456.github.io/dsh-workflow-lite/)
 
 </div>
 
@@ -121,7 +118,3 @@ Memory is only a configuration shortcut. For anything more elaborate, build it y
 3. **Run**: the model decides how to carry out the plan (working directly, dispatching subagents or forming a team) and reports progress back to the canvas.
 
 The plugin ships no execution engine and needs no extra service; scheduling and judgement stay with the model in your current session.
-
-## License
-
-[MIT](./LICENSE) © xiaoso

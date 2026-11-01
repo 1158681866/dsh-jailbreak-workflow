@@ -11,11 +11,8 @@
 
 <div align="center">
 
-[![npm version](https://img.shields.io/npm/v/@xiaoso/dsh-workflow-lite.svg)](https://www.npmjs.com/package/@xiaoso/dsh-workflow-lite)
-[![license](https://img.shields.io/npm/l/@xiaoso/dsh-workflow-lite.svg)](./LICENSE)
-[![node](https://img.shields.io/node/v/@xiaoso/dsh-workflow-lite.svg)](https://nodejs.org)
+[![node](https://img.shields.io/badge/node-22%2B-339933.svg)](https://nodejs.org)
 [![DeepSeek Harness 0.2.x](https://img.shields.io/badge/DeepSeek%20Harness-0.2.x-4d6bfe.svg)](https://github.com/deepseek-ai/deepseek-harness)
-[![docs](https://img.shields.io/badge/docs-xiaoso456.github.io-3e7ce4.svg)](https://xiaoso456.github.io/dsh-workflow-lite/)
 
 </div>
 
@@ -121,7 +118,3 @@ dsh web
 3. **执行**：模型按计划自行安排执行方式（直接完成、派发子代理或组建团队），并把进度同步回画布。
 
 插件本身不包含执行引擎，也无需额外服务；调度与判断交由当前会话中的模型完成。
-
-## License
-
-[MIT](./LICENSE) © xiaoso

@@ -294,7 +294,7 @@
 - 工作流中心「运行实例」改成和「工作流」页同一种两栏：左边工作区（顶上搜索；每项写实例数和进行中的个数，悬停看完整路径；本工作区在最前、默认选中），右边选中那个工作区的实例；搜索跨所有工作区，左栏只留有命中的。去掉「全部工作区」下拉和「本会话 / 全部」切换。工作流中心加宽到 920
 - 工作流中心「运行实例」：所有行共用一套列，状态小标宽窄不一、有没有「移到本会话」，进度条和按钮都上下对齐；按钮排成「查看 | 移到本会话 · 删除」，文字按钮在前、图标按钮成组，不能移的行留空位；「移到本会话」换成专用图标（箭头进会话气泡），不再和「设为当前」共用图钉
 
-[查看发布](https://github.com/xiaoso456/dsh-workflow-lite/releases/tag/workflow-lite-v0.2.0)
+[查看发布](https://github.com/Minglink/dsh-jailbreak-workflow/releases/tag/workflow-lite-v0.2.0)
 
 ## [0.1.0] - 2026-10-08
 
@@ -339,4 +339,4 @@
 
 - 发布物内联了第三方代码，逐条版权与许可见 `THIRD_PARTY_NOTICES.md`
 
-[查看发布](https://github.com/xiaoso456/dsh-workflow-lite/releases/tag/workflow-lite-v0.1.0)
+[查看发布](https://github.com/Minglink/dsh-jailbreak-workflow/releases/tag/workflow-lite-v0.1.0)

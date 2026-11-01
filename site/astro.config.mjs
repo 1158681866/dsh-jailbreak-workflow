@@ -1,7 +1,7 @@
 import starlight from '@astrojs/starlight'
 import { defineConfig } from 'astro/config'
 
-const REPO = 'https://github.com/xiaoso456/dsh-workflow-lite'
+const REPO = 'https://github.com/Minglink/dsh-jailbreak-workflow'
 
 /** 一组页面：label 带英文名，items 里写页面路径（不含语言前缀）。 */
 const group = (label, en, items, collapsed = true) => ({ label, translations: { en }, collapsed, items })
@@ -48,8 +48,8 @@ const sidebar = [
 ]
 
 export default defineConfig({
-  site: 'https://xiaoso456.github.io',
-  base: '/dsh-workflow-lite',
+  site: 'https://minglink.github.io',
+  base: '/dsh-jailbreak-workflow',
   devToolbar: { enabled: false },
   integrations: [
     starlight({
