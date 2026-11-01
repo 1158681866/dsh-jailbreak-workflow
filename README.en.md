@@ -24,6 +24,16 @@ A soft-workflow plugin for [DeepSeek Harness](https://github.com/deepseek-ai/dee
 
 ![dsh-jailbreak-workflow hero: glowing whale with data bars](./assets/hero.en.png)
 
+## Example workflow
+
+The "破甲制作" pipeline from the workflow repo, on the canvas — 15 steps chained into one flow, with branches, loops and output files drawn right on the graph.
+
+![Full canvas of the 破甲制作 workflow: probe testing, refusal-pattern analysis, tailored jailbreak-prompt generation, API verification and the three-deliverable output linked in sequence; each round writes back to probes.md, analysis.md, words.md, verify.md, report.md and manual.md](./assets/poyazhi-canvas.webp)
+
+![Flow detail: from refusal-pattern analysis to the three-deliverable output, with the pass/fail loop branch](./assets/poyazhi-flow.webp)
+
+<img src="./assets/poyazhi-sidebar.webp" width="300" alt="Step library on the left: Basics, Common steps and My steps, dragged onto the canvas">
+
 [![Release line, see the changelog](./assets/versions.en.png)](./CHANGELOG.md)
 
 ## Install

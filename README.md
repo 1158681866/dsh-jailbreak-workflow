@@ -24,6 +24,16 @@
 
 ![dsh-jailbreak-workflow 主视觉：深蓝发光鲸鱼与数据柱状图](./assets/hero.zh.png)
 
+## 工作流示例
+
+工作流仓库里的「破甲制作」在画布上长这样——15 个步骤串成一条流水线，分支、循环和产出文件都直接画在图上。
+
+![破甲制作工作流的完整画布：探针测试、拒绝模式分析、定制破甲词生成、API 验证、三件套输出依次相连，每次跑完把结果写回 probes.md、analysis.md、words.md、verify.md、report.md、manual.md](./assets/poyazhi-canvas.webp)
+
+![流程细节：拒绝模式分析到三件套输出，带「通过 / 未通过」循环分支](./assets/poyazhi-flow.webp)
+
+<img src="./assets/poyazhi-sidebar.webp" width="300" alt="左侧步骤库：基础、常用步骤、我的步骤三组，拖到画布上使用">
+
 [![版本线，详见更新记录](./assets/versions.zh.png)](./CHANGELOG.md)
 
 ## 安装
