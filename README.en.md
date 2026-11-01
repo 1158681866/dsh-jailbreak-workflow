@@ -25,12 +25,20 @@ A soft-workflow plugin for [DeepSeek Harness](https://github.com/deepseek-ai/dee
 Edges can carry **any condition**, and flows can be sequential, parallel, joined, conditionally branched, looped or rolled back — the plugin ships no execution engine; everything is done by the model in your current session.
 
 > [!TIP]
-> **Workflow packs**: [Minglink/dsh-workflows](https://github.com/Minglink/dsh-workflows) — ready-to-import `.wflite.zip` workflow packs; the "破甲制作" research pipeline is already up.
+> **Workflow packs**: [Minglink/dsh-workflows](https://github.com/Minglink/dsh-workflows) — ready-to-import `.wflite.zip` workflow packs; the "破甲制作" research pipeline is already up (see [📋 Available workflows](#-available-workflows) below).
 
 > [!NOTE]
 > **Experimental**: features and data formats are still changing, and any release may include breaking changes.
 
 ![dsh-jailbreak-workflow hero: glowing whale with data bars](./assets/hero.en.png)
+
+## 📋 Available workflows
+
+Ready-made workflows live in the [Minglink/dsh-workflows](https://github.com/Minglink/dsh-workflows) collection. Download a `.wflite.zip` and import it from the **Workflow hub**.
+
+| Workflow | What it does | Download |
+|---|---|---|
+| **破甲制作** | Automated LLM jailbreak-research pipeline, 15 steps: **probe testing** (200+ probes across identity-system / hybrid-frame / lightweight architectures) → **refusal-pattern analysis** → **tailored jailbreak-prompt generation** → **API verification** → **three deliverables** (jailbreak prompts + usage manual with frame matrix and push-back prompt library + research report). Ships with the `jailbreak-research` Skill: 10 test scripts + 4 prompt templates | [破甲制作.wflite.zip](https://github.com/Minglink/dsh-workflows/raw/master/workflows/破甲制作.wflite.zip) |
 
 ## 🖼️ Example workflow
 

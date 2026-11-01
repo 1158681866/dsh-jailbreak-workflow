@@ -25,12 +25,20 @@
 连线可以带**任意条件**，顺序、并行、汇合、分支、循环、回退全都支持——插件里没有执行引擎，一切由当前会话中的模型完成。
 
 > [!TIP]
-> **工作流合集**：[Minglink/dsh-workflows](https://github.com/Minglink/dsh-workflows)——现成的 `.wflite.zip` 工作流包，下载导入即用，已上架「破甲制作」研究流水线。
+> **工作流合集**：[Minglink/dsh-workflows](https://github.com/Minglink/dsh-workflows)——现成的 `.wflite.zip` 工作流包，下载导入即用，已上架「破甲制作」研究流水线（见下文 [📋 支持的工作流](#-支持的工作流)）。
 
 > [!NOTE]
 > **实验阶段**：功能和数据格式仍在调整，后续任何版本都可能包含不兼容的改动。
 
 ![dsh-jailbreak-workflow 主视觉：深蓝发光鲸鱼与数据柱状图](./assets/hero.zh.png)
+
+## 📋 支持的工作流
+
+现成的工作流放在工作流合集 [Minglink/dsh-workflows](https://github.com/Minglink/dsh-workflows) 里，下载 `.wflite.zip` 后在「**工作流中心**」导入即可运行。
+
+| 工作流 | 说明 | 下载 |
+|---|---|---|
+| **破甲制作** | LLM 破甲研究自动化流水线，15 步：**探针测试**（200+ 探针，覆盖身份系统 / 混合帧 / 轻量三种架构）→ **拒绝模式分析** → **定制破甲词生成** → **API 验证** → **三件套输出**（破甲词文件 + 使用手册（帧矩阵 + 推回词库）+ 研究报告）。内置 `jailbreak-research` Skill：10 个测试脚本 + 4 套提示词模板 | [破甲制作.wflite.zip](https://github.com/Minglink/dsh-workflows/raw/master/workflows/破甲制作.wflite.zip) |
 
 ## 🖼️ 工作流示例
 
