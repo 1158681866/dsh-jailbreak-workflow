@@ -43,4 +43,4 @@ Double-click the card to open the viewer:
 ## Notes
 
 - Have the step that writes the image produce it at the card's proportions (**Have the model fit the card** is on by default); it looks better in the card.
-- In a loop, each round's image is saved as a version, and you can compare them side by side or with a draggable divider; see [Reviewing each round's output](/dsh-workflow-lite/en/display/rounds/).
+- In a loop, each round's image is saved as a version, and you can compare them side by side or with a draggable divider; see [Reviewing each round's output](/dsh-jailbreak-workflow/en/display/rounds/).

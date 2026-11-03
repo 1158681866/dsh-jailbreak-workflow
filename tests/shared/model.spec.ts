@@ -155,6 +155,65 @@ describe('normalizeDocument', () => {
     })
     expect(out.document?.edges[0]?.data).toBeUndefined()
   })
+
+  it('契约之外的字段报「已丢弃」警告：手改 JSON 打错键名不再被静默吞掉', () => {
+    const out = normalizeDocument({
+      nodes: [{ id: 'a', type: 'wfNode', position: { x: 1, y: 2 }, data: { prompt: 'x' } }],
+      edges: [],
+      viewport: {},
+      // `ouputRoot` 是手改 JSON 最常见的那种打错：键名错一位，产出根目录就永远不生效。
+      settings: { ouputRoot: 'out' },
+      extraTop: 1,
+    })
+    expect(out.problems).toContainEqual(
+      expect.objectContaining({ level: 'warning', code: 'unknown_fields_dropped' }),
+    )
+    const messages = out.problems.map((problem) => problem.message).join('\n')
+    expect(messages).toContain('extraTop')
+    expect(messages).toContain('ouputRoot')
+    // 打错的键不会变成设置：文档里不该有任何产出根目录。
+    expect(out.document?.settings).toBeUndefined()
+  })
+
+  it('React Flow 的运行时字段归一条提示（读入时丢掉是对的），且不报成警告', () => {
+    const out = normalizeDocument({
+      nodes: [
+        {
+          id: 'a',
+          type: 'wfNode',
+          position: { x: 1, y: 2 },
+          data: { prompt: 'x' },
+          // 画布每帧都在改这几样：持久化它们就是永不停止的假 diff。
+          measured: { width: 216, height: 96 },
+          selected: true,
+          dragging: false,
+          width: 216,
+        },
+      ],
+      edges: [],
+      viewport: {},
+    })
+    expect(out.problems).toContainEqual(
+      expect.objectContaining({ level: 'hint', code: 'runtime_fields_dropped', node: 'a' }),
+    )
+    // 四个字段只冒一条，不逐键刷屏；它们也不该被当成"打错了键"。
+    expect(
+      out.problems.filter((problem) => problem.code === 'runtime_fields_dropped'),
+    ).toHaveLength(1)
+    expect(
+      out.problems.filter((problem) => problem.code === 'unknown_fields_dropped'),
+    ).toHaveLength(0)
+  })
+
+  it('插件自己写出的图不会报任何字段问题（写出与读入的键集一致）', () => {
+    const clean = doc({
+      nodes: [{ id: 'a', type: 'wfNode', position: { x: 1, y: 2 }, data: { prompt: 'x' } }],
+      edges: [{ id: 'a->b', source: 'a', target: 'b', sourceHandle: null, targetHandle: null }],
+    })
+    const again = readDocument(writeDocument(clean))
+    expect(again.problems.filter((p) => p.code === 'unknown_fields_dropped')).toHaveLength(0)
+    expect(again.problems.filter((p) => p.code === 'runtime_fields_dropped')).toHaveLength(0)
+  })
 })
 
 describe('readDocument', () => {

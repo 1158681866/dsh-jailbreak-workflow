@@ -3,7 +3,8 @@
  * - {@link useRuns}：本会话（或全部）的实例列表与当前实例；
  * - {@link useRun}：正在看的那一个实例——轮询状态文件、攒草稿、冲突、保存并通知模型。
  *
- * 只有实例视图轮询（每 2 秒带上次的 mtime 问一次，没变就只回"没变"）；模板编辑照旧不轮询。
+ * 只有实例视图轮询（跑着时每 {@link RUN_POLL_MS} 带上次的 mtime 问一次，没变就只回"没变"；
+ * 结束的实例放慢到 {@link RUN_IDLE_POLL_MS}）；模板编辑照旧不轮询。
  *
  * @module @xiaoso/dsh-workflow-lite/client/app/useRuns
  */
@@ -40,7 +41,7 @@ import { errorCode, errorMessage, type WorkflowLiteRpc, WorkflowLiteRpcError } f
 export const RUN_POLL_MS = 5000
 /** 实例已经结束（完成、失败、取消）时问得慢一些：多半不会再变，接着跑时最多晚这么久看到。 */
 export const RUN_IDLE_POLL_MS = 15000
-/** 每几轮轮询整份重读一次（产出文件的生成情况）。 */
+/** 每 2 轮轮询整份重读一次（产出文件的生成情况）：`tick % RUN_FULL_EVERY === 0`，即奇偶交替。 */
 const RUN_FULL_EVERY = 2
 
 /** 按这个实例的状态定轮询间隔；没有状态文件（不记进度）的当作还在跑。 */
@@ -369,8 +370,8 @@ export function useRun(
     void load(true)
   }, [id, load, resetDraft])
 
-  // 轮询：只在页面可见时问。状态文件没变时只回"没变"；每隔几轮整份重读一次——
-  // 产出文件生成没有不会改状态文件的修改时间（尤其是不记进度的实例），靠它跟上。
+  // 轮询：只在页面可见时问。状态文件没变时只回"没变"；每 RUN_FULL_EVERY 轮整份重读一次——
+  // 产出文件的生成不会改状态文件的修改时间（尤其是不记进度的实例），靠它跟上。
   // 结束了的实例问得慢一些（见 runPollMs）。
   const interval = runPollMs(view !== null && view.summary.id === id ? view : null)
   useEffect(() => {

@@ -22,5 +22,5 @@ Double-click the card to open the viewer, where you can switch between **Preview
 ## Notes
 
 - Images referenced by relative path in the report can be shown.
-- In a loop, each round's report is saved as a version; in the viewer, use **Versions** to compare line by line or to compare the formatting side by side; see [Reviewing each round's output](/dsh-workflow-lite/en/display/rounds/).
+- In a loop, each round's report is saved as a version; in the viewer, use **Versions** to compare line by line or to compare the formatting side by side; see [Reviewing each round's output](/dsh-jailbreak-workflow/en/display/rounds/).
 - With **Have the model fit the card** on, the report puts its conclusion first.

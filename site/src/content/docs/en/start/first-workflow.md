@@ -15,7 +15,7 @@ Describe the flow in the conversation, for example:
 
 > Create a workflow: write the code, then review it; if the review fails, go back and fix it, at most three rounds.
 
-It appears on the canvas at the same time. When the flow has a loop with metrics each round, the model also adds a dashboard shown right on the canvas; see [Check each round's output on a dashboard](/dsh-workflow-lite/en/scenarios/dashboard/). Once it looks right, click **Run** at the top right.
+It appears on the canvas at the same time. When the flow has a loop with metrics each round, the model also adds a dashboard shown right on the canvas; see [Check each round's output on a dashboard](/dsh-jailbreak-workflow/en/scenarios/dashboard/). Once it looks right, click **Run** at the top right.
 
 ## Edit by hand
 
@@ -31,4 +31,4 @@ Turn on **Record run state** in **Workflow settings**. Every run then creates an
 
 ![A running instance: steps light up by status](../../../../assets/shots/en/run-graph.webp)
 
-See [Workflow settings](/dsh-workflow-lite/en/settings/workflow/) for details.
+See [Workflow settings](/dsh-jailbreak-workflow/en/settings/workflow/) for details.

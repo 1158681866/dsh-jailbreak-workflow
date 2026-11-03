@@ -11,7 +11,7 @@ sidebar:
 |---|---|
 | 运行实例 | 按工作区查看所有实例。 |
 | 工作流 | 管理工作流及版本，导出与导入。 |
-| 记忆 | 管理记忆库，见[记忆](/dsh-workflow-lite/materials/memory/)。 |
+| 记忆 | 管理记忆库，见[记忆](/dsh-jailbreak-workflow/materials/memory/)。 |
 | 存储 | 查看本机数据占用，清理。 |
 | 设置 | 界面与配色、插件设置。 |
 
@@ -36,7 +36,7 @@ sidebar:
 
 ![工作流页：版本、导出与导入](../../../assets/shots/hub-workflows.webp)
 
-版本见[版本](/dsh-workflow-lite/manage/versions/)，导出导入见[导入与导出](/dsh-workflow-lite/manage/import-export/)。
+版本见[版本](/dsh-jailbreak-workflow/manage/versions/)，导出导入见[导入与导出](/dsh-jailbreak-workflow/manage/import-export/)。
 
 ## 存储
 
@@ -54,7 +54,7 @@ sidebar:
 
 ## 设置
 
-上方是[界面与配色](/dsh-workflow-lite/settings/plugin/)，下方是[插件设置](/dsh-workflow-lite/settings/plugin/)。
+上方是[界面与配色](/dsh-jailbreak-workflow/settings/plugin/)，下方是[插件设置](/dsh-jailbreak-workflow/settings/plugin/)。
 
 ![设置页：外观与插件设置](../../../assets/shots/hub-settings.webp)
 

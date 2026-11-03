@@ -713,6 +713,29 @@ describe('节点模板的编辑：draft / save / delete', () => {
     expect(expectOk(await repo.readTemplate('Case'))).toEqual({ prompt: 'A' })
   })
 
+  it('整个节点被当成模板存了：说清是形状不对，而不是只报 prompt 缺失', async () => {
+    await mkdir(templatesDir(root), { recursive: true })
+    await writeFile(
+      templateFile(root, 'whole-node'),
+      '{"id":"scan","type":"wfNode","position":{"x":0,"y":0},"data":{"prompt":"扫一遍。"}}\n',
+    )
+
+    const listed = await repo.list()
+    expect(listed.templates.nodes.map((entry) => entry.name)).toEqual(['whole-node'])
+    const hint = listed.warnings.find((warning) => warning.code === 'invalid_template')
+    expect(hint?.level).toBe('hint')
+    expect(hint?.message).toContain('data')
+
+    // 拿去用照样被挡（读成空模板 ⇒ 编译级），只是现在知道是为什么。
+    expect(expectError(await repo.readTemplate('whole-node')).code).toBe('blocked')
+  })
+
+  it('形状对的模板不冒 invalid_template（合法内容不许被噪音淹掉）', async () => {
+    expectOk(await repo.createNodeTemplate('fine', { prompt: 'P' }))
+    const listed = await repo.list()
+    expect(listed.warnings.map((warning) => warning.code)).not.toContain('invalid_template')
+  })
+
   it('删除：删掉就不在列表里；再删一次 ⇒ not_found', async () => {
     expectOk(await repo.createNodeTemplate('bye', { prompt: 'x' }))
     expectOk(await repo.deleteNodeTemplate('bye'))

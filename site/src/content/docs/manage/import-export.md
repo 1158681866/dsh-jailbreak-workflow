@@ -68,7 +68,7 @@ sidebar:
 ## 注意
 
 - 导入会校验路径和内容；比当前插件新的包会被拒绝，需升级插件。
-- 资源路径里的 `{workflow}` 指工作流自己的资料目录，见[资源](/dsh-workflow-lite/materials/resources/)。
+- 资源路径里的 `{workflow}` 指工作流自己的资料目录，见[资源](/dsh-jailbreak-workflow/materials/resources/)。
 
 ## 导出为 Skill
 

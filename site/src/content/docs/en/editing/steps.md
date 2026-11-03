@@ -31,7 +31,7 @@ Select a step and edit it in the right panel.
 | Icon and color | Click **Change icon and color** to choose. |
 | Output file | A file this step writes, with a path relative to the working folder; downstream steps read it from there. A **Generation rule** can set the format. |
 
-An output file can be declared in three ways: **Write a file**, **No file** (the step only does work and leaves no file) and **Undeclared**. Files can also live in a [resource](/dsh-workflow-lite/en/materials/resources/) card.
+An output file can be declared in three ways: **Write a file**, **No file** (the step only does work and leaves no file) and **Undeclared**. Files can also live in a [resource](/dsh-jailbreak-workflow/en/materials/resources/) card.
 
 **Duplicate** makes a new step with "copy" in its name. After **Delete step**, press Ctrl+Z to undo. A step that has already run in an instance cannot be deleted; set it to **Skipped** instead.
 
@@ -73,4 +73,4 @@ Files are not passed through the handoff; put them in a resource. Click **Edit h
 
 Edits are saved automatically; the top bar shows **Saving**, **Saved**, **Unsaved** or **Save failed**. If the file was changed elsewhere, you are asked to **Reload**, and on a conflict you can choose **Keep mine** or **Use disk**. The **Checks** panel lists **Errors**, **Must fix**, **Warnings** and **Suggestions**; when it shows **No problems** the workflow can run, and with errors it cannot.
 
-For the autosave delay and the step limit, see [Plugin settings and themes](/dsh-workflow-lite/en/settings/plugin/).
+For the autosave delay and the step limit, see [Plugin settings and themes](/dsh-jailbreak-workflow/en/settings/plugin/).

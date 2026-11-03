@@ -36,8 +36,11 @@ export interface SessionRemote {
 export interface Desktop {
   /** 宿主能不能把文件交给系统程序（一页只问一次）。 */
   available(): Promise<boolean>
-  /** 这份文件能用哪些程序打开；查不到回 `null`。查到的按扩展名记下，下次同类文件直接用。 */
-  applications(path: string, signal: AbortSignal): Promise<readonly DesktopApp[] | null>
+  /**
+   * 这份文件能用哪些程序打开；查不到回 `null`。查到的按扩展名记下，下次同类文件直接用。
+   * **不接 `AbortSignal`**：同类文件的查询合流成一次（别人也在等它），单个调用方取消没有意义。
+   */
+  applications(path: string): Promise<readonly DesktopApp[] | null>
   /** 已经查过的同类文件的程序表（没有就 `undefined`）：菜单一打开就能先摆出来。 */
   cached(path: string): readonly DesktopApp[] | undefined
   /** 提前查一次（鼠标移到按钮上时）；已经记下或正在查就什么也不做。 */
@@ -83,7 +86,7 @@ export function createDesktop(): Desktop & {
     },
     warm(path) {
       if (known.has(kindKey(path))) return
-      void this.applications(path, new AbortController().signal)
+      void this.applications(path)
     },
     available() {
       const current = remote

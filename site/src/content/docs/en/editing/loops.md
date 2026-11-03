@@ -23,7 +23,7 @@ Notes:
 - **A loop must have an exit.** Without one, the plan says there is no exit and the **Checks** panel warns about it.
 - There is no separate "maximum rounds" setting. To limit the rounds, write it in the prompt or a custom condition, such as "the review failed and Fix has run fewer than three times".
 - In an instance, each return to a step adds 1 to its round, shown as "Round N". Use **One more round** and **One round less** in the step panel to adjust it.
-- A step that writes an output file saves a version after each round; see [Reviewing each round's output](/dsh-workflow-lite/en/display/rounds/).
+- A step that writes an output file saves a version after each round; see [Reviewing each round's output](/dsh-jailbreak-workflow/en/display/rounds/).
 - With **Record run state** on, a run can be resumed after an interruption, from the recorded step and round.
 
 Loops are not limited to code review: "Collect candidate options → Evaluate and filter", going back for another search round when unsatisfied and summarising when satisfied, works the same way.
@@ -35,6 +35,6 @@ Loops are not limited to code review: "Collect candidate options → Evaluate an
 
 Click **Preview plan** and look at the execution batches: independent steps are in the same batch, a join comes later, and its prerequisites list every upstream step.
 
-Whether they really run at the same time depends on the **Execution mode** in [Workflow settings](/dsh-workflow-lite/en/settings/workflow/): **Serial** finishes them one by one, **Main agent + subagents** can hand them to subagents together, **Agent team** lets team members take one each, and **Auto** leaves it to the main agent.
+Whether they really run at the same time depends on the **Execution mode** in [Workflow settings](/dsh-jailbreak-workflow/en/settings/workflow/): **Serial** finishes them one by one, **Main agent + subagents** can hand them to subagents together, **Agent team** lets team members take one each, and **Auto** leaves it to the main agent.
 
 Conditional lines are mutually exclusive, which is different from parallel. For branches that must run at the same time, use lines with the condition **Always**.

@@ -1,12 +1,12 @@
 /**
  * dsh-workflow-lite — 配置面。
  *
- * 六个键，默认值全部写在 schema 里（**不硬编码在代码里**）。字段类型是
+ * 五个键，默认值全部写在 schema 里（**不硬编码在代码里**）。字段类型是
  * `Volatile`：设置表单投影的正是这些字段，写入落进当前 profile 的 Cordis patch，
  * 运行中的插件读的是**活引用**——一次配置写入就地更新它，不重挂插件。
  *
  * 部署相关的取值一律走这里：`dataDir`（数据根）、`maxNodes`、`maxResultBytes`
- * （单次返回字节上限）、`saveDebounceMs`、`routePrefix`、`installSkill`。
+ * （单次返回字节上限）、`saveDebounceMs`、`installSkill`。
  *
  * @module @xiaoso/dsh-workflow-lite/host/config
  */
@@ -31,8 +31,6 @@ export interface WorkflowLiteSettings {
   maxNodes: Volatile<number>
   /** 单次工具 / RPC 返回的字节上限。超限**报错而不截断**。 */
   maxResultBytes: Volatile<number>
-  /** 画布 ↔ host 的同源路由前缀。插件不自开端口。 */
-  routePrefix: Volatile<string>
   /** 是否随插件注册按需 skill `workflow-authoring`（设计图）、`workflow-run-state`（运行状态）与 `workflow-board`（看板）。 */
   installSkill: Volatile<boolean>
 }
@@ -46,16 +44,14 @@ export const Config = z.object({
   saveDebounceMs: z.number().min(0).default(400).volatile(),
   maxNodes: z.number().min(1).default(400).volatile(),
   maxResultBytes: z.number().min(1024).default(262_144).volatile(),
-  routePrefix: z.string().pattern(/^\//u).default('/workflow-lite').volatile(),
   installSkill: z.boolean().default(true).volatile(),
 })
 
-/** 六个键的名字（测试与文档用，避免两处各写一遍）。 */
+/** 五个键的名字（测试与文档用，避免两处各写一遍）。 */
 export const CONFIG_KEYS = [
   'dataDir',
   'saveDebounceMs',
   'maxNodes',
   'maxResultBytes',
-  'routePrefix',
   'installSkill',
 ] as const

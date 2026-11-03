@@ -20,6 +20,8 @@ import {
   normalizeNeedle,
   RUNS_SHOWN,
   visibleRuns,
+  visibleWorkflows,
+  WORKFLOWS_SHOWN,
 } from '../model/switcherSearch.ts'
 import { useConfirm } from './Confirm.tsx'
 import { EditActions } from './EditActions.tsx'
@@ -58,6 +60,8 @@ export function WorkflowSwitcher(props: WorkflowSwitcherProps): React.JSX.Elemen
   const [query, setQuery] = useState('')
   /** 实例那一组展开到全部（默认只露最近几个）。 */
   const [runsExpanded, setRunsExpanded] = useState(false)
+  /** 工作流那一组展开到全部（默认只露最近 {@link WORKFLOWS_SHOWN} 个）。 */
+  const [workflowsExpanded, setWorkflowsExpanded] = useState(false)
   /** 顶栏上的名字正在改（只改正开着的这张）。 */
   const [renaming, setRenaming] = useState(false)
   /** 下拉里正在改名的那一行。 */
@@ -88,6 +92,7 @@ export function WorkflowSwitcher(props: WorkflowSwitcherProps): React.JSX.Elemen
     setOpen(false)
     setQuery('')
     setRunsExpanded(false)
+    setWorkflowsExpanded(false)
     setEditing(null)
     setLingering(false)
   }
@@ -124,6 +129,23 @@ export function WorkflowSwitcher(props: WorkflowSwitcherProps): React.JSX.Elemen
     expanded: runsExpanded || searching,
     active: activeRun,
   })
+  /**
+   * 折叠靠的是 `key` 的稳定：改名过的行沿用旧键（{@link rowKey}），所以键必须按**整表**算一次，
+   * 再把可见的那几行挑出来。反过来（先切片再算键）会让「显示全部」一展开就被当成新挂载、
+   * 把整组依次浮出重放一遍。列表上百张时这里原本每行重建一次整表名字数组（O(n²)），算一次就够。
+   */
+  const rowNames = filtered.map((entry) => entry.name)
+  const keyed = filtered.map((entry, index) => ({
+    key: rowKey(rowKeys.current, rowNames, index),
+    name: entry.name,
+    entry,
+  }))
+  const { shown: shownWorkflows, hidden: hiddenWorkflows } = visibleWorkflows(keyed, {
+    expanded: workflowsExpanded || searching,
+    current,
+  })
+  /** 工作流多到要折叠；搜索时全部摊开，不折。 */
+  const wfFoldable = !searching && keyed.length > WORKFLOWS_SHOWN + 1
   /** 实例多到要折叠；搜索时全部摊开，不折。 */
   const foldable = !searching && matchedRuns.length > RUNS_SHOWN + 1
   /** 本会话有实例：两组各带一个标题；一个实例都没有就只有工作流，不加标题。 */
@@ -133,7 +155,7 @@ export function WorkflowSwitcher(props: WorkflowSwitcherProps): React.JSX.Elemen
     current ?? '',
     activeRun ?? '',
     shownRuns.map((item) => item.id).join(','),
-    filtered.map((entry) => entry.name).join(','),
+    shownWorkflows.map((row) => row.entry.name).join(','),
   ].join('|')
   const doomedEntry = workflows.find((entry) => entry.name === doomed)
 
@@ -248,13 +270,9 @@ export function WorkflowSwitcher(props: WorkflowSwitcherProps): React.JSX.Elemen
           {filtered.length === 0 && shownRuns.length === 0 && (workflows.length > 0 || grouped) && (
             <p className={css.emptyLine}>{t('wf.none')}</p>
           )}
-          {filtered.map((entry, index) => (
+          {shownWorkflows.map(({ key, entry }) => (
             <WorkflowRow
-              key={rowKey(
-                rowKeys.current,
-                filtered.map((row) => row.name),
-                index,
-              )}
+              key={key}
               t={t}
               entry={entry}
               active={entry.name === current}
@@ -294,6 +312,15 @@ export function WorkflowSwitcher(props: WorkflowSwitcherProps): React.JSX.Elemen
               }}
             />
           ))}
+          {wfFoldable && (
+            <RunsMore
+              t={t}
+              hidden={hiddenWorkflows}
+              expanded={workflowsExpanded}
+              onToggle={() => setWorkflowsExpanded(!workflowsExpanded)}
+              testId="wl-wf-more"
+            />
+          )}
         </div>
       </div>
       {doomedEntry !== undefined &&
@@ -346,12 +373,14 @@ export function WorkflowSwitcher(props: WorkflowSwitcherProps): React.JSX.Elemen
   )
 }
 
-/** 实例那一组的尾巴：折叠时「显示全部 N 个」，展开后「收起」；箭头转个向（只动 transform）。 */
+/** 某一组尾巴上的折叠行：折叠时「显示全部 N 个」，展开后「收起」；箭头转个向（只动 transform）。 */
 function RunsMore(props: {
   t: T
   hidden: number
   expanded: boolean
   onToggle(): void
+  /** 验收脚本认这一行用的标识（实例组与工作流组各一个）。 */
+  testId?: string
 }): React.JSX.Element {
   const { t } = props
   return (
@@ -359,7 +388,7 @@ function RunsMore(props: {
       type="button"
       className={cx(ui.menuItem, css.more)}
       aria-expanded={props.expanded}
-      data-testid="wl-run-more"
+      data-testid={props.testId ?? 'wl-run-more'}
       onClick={props.onToggle}
     >
       <span className={css.moreText}>

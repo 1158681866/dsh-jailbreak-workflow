@@ -18,15 +18,15 @@ The behavior and settings of canvas display may change later.
 
 | Content | Page |
 |---|---|
-| Images | [Images](/dsh-workflow-lite/en/display/image/) |
-| HTML pages, dashboards | [Web pages and dashboards](/dsh-workflow-lite/en/display/web/) |
-| Markdown | [Markdown](/dsh-workflow-lite/en/display/markdown/) |
-| Logs, plain text | [Logs and plain text](/dsh-workflow-lite/en/display/log/) |
-| CSV, TSV | [Tables](/dsh-workflow-lite/en/display/table/) |
-| JSON, code, config | [JSON, code and config](/dsh-workflow-lite/en/display/text/) |
-| Folders | [Folders and image walls](/dsh-workflow-lite/en/display/folder/) |
+| Images | [Images](/dsh-jailbreak-workflow/en/display/image/) |
+| HTML pages, dashboards | [Web pages and dashboards](/dsh-jailbreak-workflow/en/display/web/) |
+| Markdown | [Markdown](/dsh-jailbreak-workflow/en/display/markdown/) |
+| Logs, plain text | [Logs and plain text](/dsh-jailbreak-workflow/en/display/log/) |
+| CSV, TSV | [Tables](/dsh-jailbreak-workflow/en/display/table/) |
+| JSON, code, config | [JSON, code and config](/dsh-jailbreak-workflow/en/display/text/) |
+| Folders | [Folders and image walls](/dsh-jailbreak-workflow/en/display/folder/) |
 
-URLs and skills cannot be displayed. In a loop, the output of every round can be looked back at and compared; see [Reviewing each round's output](/dsh-workflow-lite/en/display/rounds/).
+URLs and skills cannot be displayed. In a loop, the output of every round can be looked back at and compared; see [Reviewing each round's output](/dsh-jailbreak-workflow/en/display/rounds/).
 
 ## Turn it on
 
@@ -85,7 +85,7 @@ The same Markdown, from left to right and top to bottom: card, soft cut-out, cut
 | Cut-out | Even the canvas dots show through. |
 | Frosted glass | A translucent card face with the canvas blurred behind it. |
 
-The default look is chosen in **Workflow hub → Settings → Appearance**; see [Plugin settings and themes](/dsh-workflow-lite/en/settings/plugin/).
+The default look is chosen in **Workflow hub → Settings → Appearance**; see [Plugin settings and themes](/dsh-jailbreak-workflow/en/settings/plugin/).
 
 ## Notes
 

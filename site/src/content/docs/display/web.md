@@ -15,7 +15,7 @@ sidebar:
 2. 给这个文件建资源卡（从步骤拖线到空白处，选「产出文件」），打开「在画布上展示」。
 3. 一般选「中」，缩放保持 100%；缩小会让整页的字一起变小，放不下的内容点开查看框看。
 
-完整的搭建过程见[用看板查看每轮产出](/dsh-workflow-lite/scenarios/dashboard/)。
+完整的搭建过程见[用看板查看每轮产出](/dsh-jailbreak-workflow/scenarios/dashboard/)。
 
 ## 显示方式
 
@@ -32,4 +32,4 @@ sidebar:
 
 - 网页里按相对路径引用的图片、样式暂时显示不出来，查看框标题行会提示有几张没能显示；需要完整效果时，点击「用其他程序打开」。
 - 点击「交互」后可在卡片里点击网页，Esc 退出。
-- 每一轮的看板会存一版，可回看对比，见[各轮产出回看](/dsh-workflow-lite/display/rounds/)。
+- 每一轮的看板会存一版，可回看对比，见[各轮产出回看](/dsh-jailbreak-workflow/display/rounds/)。

@@ -8,6 +8,12 @@
 /** 实例默认露出几个（其余折叠）。 */
 export const RUNS_SHOWN = 3
 
+/**
+ * 工作流默认露出几个。比实例多一档：上百张图时，一次挂上百行带 Flip 测量的行是切换下拉
+ * 最贵的一帧；但工作流是"我要找哪一张"，只给 3 个不够挑。
+ */
+export const WORKFLOWS_SHOWN = 12
+
 /** 搜索词归一：去首尾空白、不分大小写。 */
 export function normalizeNeedle(query: string): string {
   return query.trim().toLowerCase()
@@ -65,5 +71,24 @@ export function visibleRuns<T extends { id: string }>(
   const limit = options.limit ?? RUNS_SHOWN
   if (options.expanded || list.length <= limit + 1) return { shown: [...list], hidden: 0 }
   const shown = list.filter((item, index) => index < limit || item.id === options.active)
+  return { shown, hidden: list.length - shown.length }
+}
+
+/**
+ * 工作流这一组此刻露出哪几张——照 {@link visibleRuns} 的取舍，只是缺省档位不同。
+ *
+ * - 展开了、或者搜索中（`expanded`）：全部（搜索要的是命中项，折叠会把结果藏掉）；
+ * - 否则最前 {@link WORKFLOWS_SHOWN} 个，再加上正开着的那张（`current`，它藏在折叠里会让人找不到自己）；
+ * - 只多出一个时直接露出：「显示全部」那一行本身就占一行。
+ *
+ * 调用方按 `updatedAt` 从新到旧传进来即可（下拉里就是这个序）；不改变相对顺序。
+ */
+export function visibleWorkflows<T extends { name: string }>(
+  list: readonly T[],
+  options: { expanded: boolean; current: string | null; limit?: number },
+): { shown: T[]; hidden: number } {
+  const limit = options.limit ?? WORKFLOWS_SHOWN
+  if (options.expanded || list.length <= limit + 1) return { shown: [...list], hidden: 0 }
+  const shown = list.filter((item, index) => index < limit || item.name === options.current)
   return { shown, hidden: list.length - shown.length }
 }

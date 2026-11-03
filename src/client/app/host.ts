@@ -22,6 +22,11 @@ export interface HostAccess {
   list(path?: string): Promise<HostListResponse>
   /** 会话里的 agent 能用的 skill。 */
   skills(): Promise<HostSkillsResponse>
+  /**
+   * 丢掉当前「会话 + 工作区」这一份 skill 清单记忆，下一次 `skills()` 重新问 host。
+   * 模型在会话里新装或删了 skill 之后清单不会自己变——打开「选择 Skill」浮层时调一次。
+   */
+  refreshSkills(): void
   /** 读一个 skill 的全文。 */
   skill(name: string): Promise<HostSkillResponse>
   /** 插件的记忆库（记忆卡引用的就是它里面的一条）。 */
@@ -39,6 +44,8 @@ export function createHostAccess(
     ...(cwd === undefined ? {} : { cwd }),
     ...(session === undefined ? {} : { session }),
   }
+  /** 清单记忆的身份：同一个会话、同一个工作区共用一份。 */
+  const skillKey = `${session ?? ''}\n${cwd ?? ''}`
   return {
     cwd,
     desktop: where.desktop,
@@ -48,15 +55,17 @@ export function createHostAccess(
         ...(cwd === undefined ? {} : { cwd }),
       }),
     skills: () => {
-      const key = `${session ?? ''}\n${cwd ?? ''}`
-      let pending = skillCache.get(key)
+      let pending = skillCache.get(skillKey)
       if (pending === undefined) {
         pending = rpc.call('host/skills', scope)
         // 失败了不记：下次再点再问。
-        pending.catch(() => skillCache.delete(key))
-        skillCache.set(key, pending)
+        pending.catch(() => skillCache.delete(skillKey))
+        skillCache.set(skillKey, pending)
       }
       return pending
+    },
+    refreshSkills: () => {
+      skillCache.delete(skillKey)
     },
     skill: (name) => rpc.call('host/skill', { name, ...scope }),
     memories: memoryStore(rpc),

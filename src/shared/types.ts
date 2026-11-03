@@ -511,6 +511,7 @@ export type ValidationCode =
   | 'memory_misplaced'
   | 'unknown_node_type'
   | 'unknown_fields_dropped'
+  | 'runtime_fields_dropped'
   // 提示
   | 'branch_not_exhaustive'
   | 'freeform_when'
@@ -533,7 +534,7 @@ export interface ValidationProblem {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 工具线格式（唯一工具 workflow_lite，16 个 action）
+// 工具线格式（唯一工具 workflow_lite，17 个 action，见 {@link ACTIONS}）
 // ─────────────────────────────────────────────────────────────
 
 export const TOOL_NAME = 'workflow_lite'
@@ -747,6 +748,7 @@ export type ToolSuccess =
   | { action: 'write_resource'; result: WriteResult }
   | { action: 'runs'; result: unknown }
   | { action: 'resume'; result: unknown }
+  | { action: 'state'; result: unknown }
 
 // ─────────────────────────────────────────────────────────────
 // 图语义（供编译器与画布共用）

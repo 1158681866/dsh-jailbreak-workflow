@@ -200,7 +200,6 @@ export type Edit =
   | { type: 'setHandoff'; id: string; handoff: Handoff | false | undefined; merge?: string }
   /** 改写入方式（步骤 → 资源）：整份写出 / 在原文件上更新。 */
   | { type: 'setUpdate'; id: string; update: boolean }
-  /** 视口是视图状态：照样落盘，但不进撤销栈。 */
   /** 换掉整份工作流设置（设置对话框「完成」时一次交出来 = 一条撤销步）。 */
   | { type: 'setSettings'; settings: WorkflowSettings | undefined }
   /** 整张换掉（实例视图撤回某一处改动时用）；选中的东西不在了就放掉。 */

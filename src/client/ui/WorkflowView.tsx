@@ -31,11 +31,11 @@ import { type SessionBridge, useSessionRows } from '../app/sessions.ts'
 import { useColorScheme, useThemeChoice } from '../app/theme.ts'
 import { useLatestOutputs } from '../app/useDisplayStats.ts'
 import { useMemoryPick } from '../app/useMemoryPick.ts'
-import { useRuns } from '../app/useRuns.ts'
+import { type Runs, useRuns } from '../app/useRuns.ts'
 import { useWorkflow, type Workflow } from '../app/useWorkflow.ts'
 import type { LocaleKey, NS, T } from '../i18n.ts'
 import { boardTheme } from '../model/boardTheme.ts'
-import { findNode, isDirty, type Selection } from '../model/editor.ts'
+import { type Edit, findNode, isDirty, type Selection } from '../model/editor.ts'
 import { freeSpot, NODE_H, NODE_W, tidy } from '../model/layout.ts'
 import { type LibraryFocus, type StepSource, starterGraph } from '../model/library.ts'
 import { nodeTitle } from '../model/nodeName.ts'
@@ -44,6 +44,7 @@ import { errorMessage, type WorkflowLiteRpc } from '../rpc.ts'
 import { BoardThemeContext } from './boardFrame.ts'
 import { type AddRequest, Canvas } from './Canvas.tsx'
 import { ZoomDock } from './Dock.tsx'
+import { ErrorBoundary } from './ErrorBoundary.tsx'
 import { HubDialog } from './HubDialog.tsx'
 import { Icon } from './Icon.tsx'
 import { InputsDialog } from './InputsDialog.tsx'
@@ -90,6 +91,11 @@ function inspectorWidth(viewWidth: number): number {
   return Math.min(360, Math.max(300, viewWidth * 0.3))
 }
 const GAP = 12
+
+/** 图的节点身份串：异步回包回来时比对图换没换（`relayout` 与 `addStep` 都靠它挡晚到的写回）。 */
+function nodeIdsOf(doc: WorkflowDocument): string {
+  return doc.nodes.map((node) => node.id).join('\n')
+}
 
 const TYPING = new Set(['INPUT', 'TEXTAREA', 'SELECT'])
 
@@ -139,15 +145,21 @@ function CanvasLayer(props: {
 
 export function WorkflowView(props: WorkflowViewProps): React.JSX.Element {
   return (
+    // `ReactFlowProvider` 在根边界**外面**：画布、属性面板、定位/整理都要用它的 store。
+    // 边界重试重挂的是 `Shell` 那一棵，Provider 留在外面就一直在——不然重试回来第一帧缺 context，
+    // 会在崩溃卡上再炸一次。配色与看板主题（`BoardThemeContext`）在 `Shell` 里面，随子树一起重挂，
+    // 值由 `Shell` 自己算，重试后照样有。
     <ReactFlowProvider>
-      <Shell
-        rpc={props.rpc}
-        t={props.t as T}
-        session={props.sessionId}
-        openView={props.openView}
-        {...(props.sessions === undefined ? {} : { sessions: props.sessions })}
-        {...(props.desktop === undefined ? {} : { desktop: props.desktop })}
-      />
+      <ErrorBoundary label="view" variant="view" t={props.t as T}>
+        <Shell
+          rpc={props.rpc}
+          t={props.t as T}
+          session={props.sessionId}
+          openView={props.openView}
+          {...(props.sessions === undefined ? {} : { sessions: props.sessions })}
+          {...(props.desktop === undefined ? {} : { desktop: props.desktop })}
+        />
+      </ErrorBoundary>
     </ReactFlowProvider>
   )
 }
@@ -156,6 +168,35 @@ export function WorkflowView(props: WorkflowViewProps): React.JSX.Element {
 const RUNS_REFRESH_MS = 8000
 /** 第一次加载最多藏多久（见 `booting`）。 */
 const BOOT_VEIL_MS = 400
+
+/**
+ * 单趟合流：同一件事正在做时，把后来的叫法记成「回来之后补一次」，不叠成并发的多趟请求。
+ *
+ * 补的那一次照常发（不省）：排队期间磁盘多半又变了，宁可多读一趟也不要显示旧的。
+ * 注意合流后的 `await` 可能在真正的请求回来之前就 resolve（那次已经排进补刷），
+ * 所以只用在「等不等都不影响下一步」的地方。
+ */
+function singleFlight(run: () => Promise<void>): () => Promise<void> {
+  let busy = false
+  let queued = false
+  const once = async (): Promise<void> => {
+    if (busy) {
+      queued = true
+      return
+    }
+    busy = true
+    try {
+      await run()
+    } finally {
+      busy = false
+      if (queued) {
+        queued = false
+        void once()
+      }
+    }
+  }
+  return once
+}
 
 function Shell(props: {
   rpc: WorkflowLiteRpc
@@ -170,6 +211,27 @@ function Shell(props: {
   const wf = useWorkflow(props.rpc, t)
   const { state, analysis } = wf
   const runs = useRuns(props.rpc, props.session)
+  /*
+   * 刷新的「单趟合流」：`RUNS_REFRESH_MS` 的定时器、开名字下拉时顶栏那一下、执行完与工作流中心
+   * 改完之后的 `refreshCatalog()`，很容易撞在同一瞬间发出好几个 `run/list` / `graph/list`
+   * （`useRuns`/`useWorkflow` 里都没有 pending 去重，而那两处不归这块改，合流放在这一层最合适：
+   * 这一层是这些刷新的所有发起方）。正在刷时把后来的记成「回来补一次」；补的那次照常发不省略——
+   * 排队期间磁盘多半又变了，宁可多读一趟也不要显示旧的。
+   */
+  const refreshRunsSoon = useMemo(() => singleFlight(() => runs.refresh()), [runs.refresh])
+  const refreshCatalogSoon = useMemo(
+    () => singleFlight(() => wf.refreshCatalog()),
+    [wf.refreshCatalog],
+  )
+  /** 递给各块面板的刷新入口一律换成合流版；数据字段还是原样（对象本来每次渲染都是新的）。 */
+  const runsView = useMemo<Runs>(
+    () => ({ ...runs, refresh: refreshRunsSoon }),
+    [runs, refreshRunsSoon],
+  )
+  const wfView = useMemo<Workflow>(
+    () => ({ ...wf, refreshCatalog: refreshCatalogSoon }),
+    [wf, refreshCatalogSoon],
+  )
   /** 正在看的工作流实例；`null` = 模板编辑。 */
   const [runId, setRunId] = useState<string | null>(null)
   const [hubOpen, setHubOpen] = useState(false)
@@ -229,10 +291,10 @@ function Shell(props: {
   }, [runs.loaded, runs.current, runId])
   useEffect(() => {
     const timer = window.setInterval(() => {
-      if (document.visibilityState === 'visible') void runs.refresh()
+      if (document.visibilityState === 'visible') void refreshRunsSoon()
     }, RUNS_REFRESH_MS)
     return () => window.clearInterval(timer)
-  }, [runs.refresh])
+  }, [refreshRunsSoon])
   const openRun = useCallback((id: string): void => {
     setFreshRun(null)
     setRunId(id)
@@ -320,7 +382,7 @@ function Shell(props: {
             .catch(() => {})
           throw error
         }
-        await runs.refresh()
+        await refreshRunsSoon()
         if (session === props.session) {
           // 本会话：切到对话 tab 看它跑（回到工作流 tab 时显示的就是这个实例）。
           seenCurrent.current = started.instance.id
@@ -345,7 +407,7 @@ function Shell(props: {
       t,
       sessionRows,
       sessionCwd,
-      runs,
+      refreshRunsSoon,
       openRun,
     ],
   )
@@ -568,13 +630,11 @@ function Shell(props: {
         ? undefined
         : { width: measured.width, height: measured.height }
     }
-    const ids = (nodes: readonly { id: string }[]): string =>
-      nodes.map((node) => node.id).join('\n')
     void tidy(doc, analysis, sizeOf).then((positions) => {
       // 排版是异步的（第一次还要加载 ELK）：这期间加了 / 删了节点就作废，别拿旧图的版式盖掉新改动。
       // 只是存盘回执换了个文档对象、节点没变，照常应用。
       const current = docRef.current
-      if (current === null || ids(current.nodes) !== ids(doc.nodes)) return
+      if (current === null || nodeIdsOf(current) !== nodeIdsOf(doc)) return
       wf.edit({ type: 'moveNodes', positions })
       fitSoon()
     })
@@ -598,11 +658,23 @@ function Shell(props: {
       const step = source.kind !== 'resource' && source.kind !== 'input' && source.kind !== 'memory'
       // 新步骤会接管选中；之后任何一次换选中都会把这个标记清掉。
       if (step) setFocusPrompt(source.kind === 'blank')
+      // 加「我的步骤」要先读它的文件（一趟 RPC），等回来时人可能已经切到别的图了：
+      // 写回去只认点的那一下那张图。办法和 `relayout` 一致——节点换了就作废，只是存盘回执
+      // 换了个文档对象（节点没变）照常应用；当时还没打开图就照常写。
+      const wanted = docRef.current
+      const wantedIds = wanted === null ? '' : nodeIdsOf(wanted)
+      const editOnWanted = (next: Edit): void => {
+        const current = docRef.current
+        // 还是那张图才写回去（只是存盘回执换了个文档对象、节点没变，也算同一张）。
+        if (current === wanted || (current !== null && nodeIdsOf(current) === wantedIds)) {
+          wf.edit(next)
+        }
+      }
       await addFromSource(
         {
           t,
           doc: state.doc,
-          edit: wf.edit,
+          edit: editOnWanted,
           loadTemplate: wf.loadTemplate,
           workflow: state.name,
           pickMemory: (request) =>
@@ -798,32 +870,36 @@ function Shell(props: {
       live &&
       (focus !== null || (doc !== null && analysis !== null && state.selection !== null)))
   const hub = hubOpen && (
-    <HubDialog
-      t={t}
-      rpc={props.rpc}
-      host={host}
-      session={props.session}
-      sessionRows={sessionRows}
-      sessionsReady={props.sessions?.available() === true}
-      runs={runs}
-      onOpenRun={openRun}
-      onNotice={wf.notify}
-      workflows={{
-        current: state.name,
-        scope: {
-          ...(sessionCwd === undefined ? {} : { cwd: sessionCwd }),
-          ...(props.session === undefined ? {} : { session: props.session }),
-        },
-        flush: wf.flush,
-        onReload: wf.reload,
-        onOpen: openTemplate,
-        rename: wf.rename,
-        remove: wf.remove,
-        onChanged: () => void wf.refreshCatalog(),
-      }}
-      exportCurrent={hubExport}
-      onClose={() => setHubOpen(false)}
-    />
+    // 工作流中心一层：这里一次列出所有工作流、实例与记忆（十几个到上百个时数据面最大），
+    // 它自己抛错只坏这个对话框，不该把底下的画布与顶栏一起带走。
+    <ErrorBoundary label="hub" t={t}>
+      <HubDialog
+        t={t}
+        rpc={props.rpc}
+        host={host}
+        session={props.session}
+        sessionRows={sessionRows}
+        sessionsReady={props.sessions?.available() === true}
+        runs={runsView}
+        onOpenRun={openRun}
+        onNotice={wf.notify}
+        workflows={{
+          current: state.name,
+          scope: {
+            ...(sessionCwd === undefined ? {} : { cwd: sessionCwd }),
+            ...(props.session === undefined ? {} : { session: props.session }),
+          },
+          flush: wf.flush,
+          onReload: wf.reload,
+          onOpen: openTemplate,
+          rename: wf.rename,
+          remove: wf.remove,
+          onChanged: () => void refreshCatalogSoon(),
+        }}
+        exportCurrent={hubExport}
+        onClose={() => setHubOpen(false)}
+      />
+    </ErrorBoundary>
   )
   return (
     <BoardThemeContext.Provider value={board}>
@@ -848,32 +924,41 @@ function Shell(props: {
         <ModalHostProvider value={modalHost}>
           {runId !== null ? (
             <>
-              <RunView
-                t={t}
-                rpc={props.rpc}
-                session={props.session}
-                id={runId}
-                runs={runs}
-                workflows={wf.catalog?.workflows ?? []}
-                templates={wf.catalog?.templates.nodes ?? []}
-                loadTemplate={wf.loadTemplate}
-                onSaveTemplate={wf.saveTemplate}
-                narrow={narrow}
-                inspectorW={inspectorW}
-                panelOpen={runPanel}
-                onPanel={setRunPanel}
-                onOpenRun={openRun}
-                onOpenTemplate={openTemplate}
-                slots={slots}
-                memories={memories.entries}
-                reloadRef={reloadRun}
-                onOpenHub={() => {
-                  setHubExport(false)
-                  setHubOpen(true)
-                }}
-                onSettled={() => setBooting(false)}
-                {...(props.desktop === undefined ? {} : { desktop: props.desktop })}
-              />
+              {/*
+               * 实例视图一层边界：画布、右栏、`RunTopBar` 都由 `RunView` 内部渲染，从这一层整体圈住
+               * 最省事（不越界去改 RunView）。炸了之后实例那块自己填进共用顶栏的三段（名字 / 状态 / 按钮）
+               * 会跟着没，但共用顶栏本身在这一层外面、还在——开工作流中心、切工作流与实例都点得动。
+               * 边界在 `ModalHostProvider` **里面**：实例视图里的对话框照样挂到视图根；崩溃卡自己没有
+               * 对话框，也不需要那个挂载点。
+               */}
+              <ErrorBoundary label="run" t={t}>
+                <RunView
+                  t={t}
+                  rpc={props.rpc}
+                  session={props.session}
+                  id={runId}
+                  runs={runsView}
+                  workflows={wf.catalog?.workflows ?? []}
+                  templates={wf.catalog?.templates.nodes ?? []}
+                  loadTemplate={wf.loadTemplate}
+                  onSaveTemplate={wf.saveTemplate}
+                  narrow={narrow}
+                  inspectorW={inspectorW}
+                  panelOpen={runPanel}
+                  onPanel={setRunPanel}
+                  onOpenRun={openRun}
+                  onOpenTemplate={openTemplate}
+                  slots={slots}
+                  memories={memories.entries}
+                  reloadRef={reloadRun}
+                  onOpenHub={() => {
+                    setHubExport(false)
+                    setHubOpen(true)
+                  }}
+                  onSettled={() => setBooting(false)}
+                  {...(props.desktop === undefined ? {} : { desktop: props.desktop })}
+                />
+              </ErrorBoundary>
               {hub}
             </>
           ) : (
@@ -883,54 +968,63 @@ function Shell(props: {
                 dim={canvasHold.dim}
               >
                 {shown !== null && (
-                  <Canvas
-                    t={t}
-                    doc={shown.doc}
-                    analysis={shown.analysis}
-                    loadKey={shown.key}
-                    {...(shown.name === null ? {} : { viewKey: shown.name })}
-                    selection={state.selection}
-                    problems={state.problems}
-                    insets={insets}
-                    onEdit={wf.edit}
-                    onSeal={wf.seal}
-                    onSelect={select}
-                    onRequestAdd={requestAdd}
-                    onDropSource={(source, at) => void addStep(source, at)}
-                    onSettled={() => setTemplateSettled(true)}
-                    onStarter={() => {
-                      wf.edit({ type: 'addGraph', ...starterGraph(t) })
-                      fitSoon()
-                    }}
-                    focusFile={focusFile}
-                    onFocusFile={onFocusFile}
-                    onMemory={toggleMemory}
-                    memories={memories.entries}
-                    workflow={state.name}
-                    display={canvasDisplay}
-                  />
+                  // 画布是重灾区（图数据 + 走线 + 展示卡都在这棵里）：单独一层边界。
+                  // 某张卡渲染抛错只让画布这一格换成崩溃卡，顶栏、步骤库、右栏照常用；
+                  // 边界放在 CanvasLayer 里面，因为那一层就是定位盒，卡片才铺得满。
+                  <ErrorBoundary label="canvas" t={t}>
+                    <Canvas
+                      t={t}
+                      doc={shown.doc}
+                      analysis={shown.analysis}
+                      loadKey={shown.key}
+                      {...(shown.name === null ? {} : { viewKey: shown.name })}
+                      selection={state.selection}
+                      problems={state.problems}
+                      insets={insets}
+                      onEdit={wf.edit}
+                      onSeal={wf.seal}
+                      onSelect={select}
+                      onRequestAdd={requestAdd}
+                      onDropSource={(source, at) => void addStep(source, at)}
+                      onSettled={() => setTemplateSettled(true)}
+                      onStarter={() => {
+                        wf.edit({ type: 'addGraph', ...starterGraph(t) })
+                        fitSoon()
+                      }}
+                      focusFile={focusFile}
+                      onFocusFile={onFocusFile}
+                      onMemory={toggleMemory}
+                      memories={memories.entries}
+                      workflow={state.name}
+                      display={canvasDisplay}
+                    />
+                  </ErrorBoundary>
                 )}
               </CanvasLayer>
 
-              {state.phase === 'idle' && wf.catalog !== null && <Welcome t={t} wf={wf} />}
-              {state.phase === 'broken' && <Broken t={t} wf={wf} />}
+              {state.phase === 'idle' && wf.catalog !== null && <Welcome t={t} wf={wfView} />}
+              {state.phase === 'broken' && <Broken t={t} wf={wfView} />}
 
               {live && focus !== null && (
                 <div className={css.inspector}>
-                  <StepPanel
-                    t={t}
-                    wf={wf}
-                    focus={focus}
-                    onFocus={focusLibrary}
-                    onAddToCanvas={addToCanvas}
-                    onCopyToMine={(seed, id) =>
-                      focusLibrary({
-                        kind: 'new',
-                        seed: { ...seed, ...freshTemplateLook() },
-                        name: freeStepName(`my-${id}`),
-                      })
-                    }
-                  />
+                  {/* 右栏（步骤详情 / 属性面板）单独一层：它读的是 catalog、模板、记忆这些外面的数据，
+                      炸了不该把画布一起带走；反过来画布炸了这块照常用。重试只重挂这一栏。 */}
+                  <ErrorBoundary label="inspector" t={t}>
+                    <StepPanel
+                      t={t}
+                      wf={wfView}
+                      focus={focus}
+                      onFocus={focusLibrary}
+                      onAddToCanvas={addToCanvas}
+                      onCopyToMine={(seed, id) =>
+                        focusLibrary({
+                          kind: 'new',
+                          seed: { ...seed, ...freshTemplateLook() },
+                          name: freeStepName(`my-${id}`),
+                        })
+                      }
+                    />
+                  </ErrorBoundary>
                 </div>
               )}
 
@@ -940,26 +1034,28 @@ function Shell(props: {
                 analysis !== null &&
                 state.selection !== null && (
                   <div className={css.inspector}>
-                    <Inspector
-                      t={t}
-                      doc={doc}
-                      analysis={analysis}
-                      selection={state.selection}
-                      focusPrompt={focusPrompt && state.selection.kind === 'node'}
-                      onEdit={wf.edit}
-                      onSelect={select}
-                      onSeal={wf.seal}
-                      onDuplicate={duplicate}
-                      onRemoveNode={(id) => {
-                        removeNode(id)
-                        focusCanvas()
-                      }}
-                      onSaveTemplate={wf.saveTemplate}
-                      onFocusFile={onFocusFile}
-                      host={host}
-                      workflow={state.name}
-                      onPickMemory={openMemoryPick}
-                    />
+                    <ErrorBoundary label="inspector" t={t}>
+                      <Inspector
+                        t={t}
+                        doc={doc}
+                        analysis={analysis}
+                        selection={state.selection}
+                        focusPrompt={focusPrompt && state.selection.kind === 'node'}
+                        onEdit={wf.edit}
+                        onSelect={select}
+                        onSeal={wf.seal}
+                        onDuplicate={duplicate}
+                        onRemoveNode={(id) => {
+                          removeNode(id)
+                          focusCanvas()
+                        }}
+                        onSaveTemplate={wf.saveTemplate}
+                        onFocusFile={onFocusFile}
+                        host={host}
+                        workflow={state.name}
+                        onPickMemory={openMemoryPick}
+                      />
+                    </ErrorBoundary>
                   </div>
                 )}
 
@@ -1120,7 +1216,7 @@ function Shell(props: {
                   desktop={host.desktop}
                   flush={wf.flush}
                   onRestored={wf.reload}
-                  onChanged={() => void wf.refreshCatalog()}
+                  onChanged={() => void refreshCatalogSoon()}
                   onClose={() => setVersionsOpen(false)}
                 />
               )}
@@ -1180,58 +1276,68 @@ function Shell(props: {
           )}
           {live && (
             <div className={css.library} aria-hidden={!libraryOpen}>
-              <Library
-                t={t}
-                templates={wf.catalog?.templates.nodes ?? []}
-                focus={focus}
-                onFocus={focusLibrary}
-                onNewStep={() =>
-                  focusLibrary({
-                    kind: 'new',
-                    seed: { prompt: '', ...freshTemplateLook() },
-                    name: freeStepName('my-step'),
-                  })
-                }
-                onClose={toggleLibrary}
-              />
+              {/* 步骤库一层：列表里读的是 catalog 与「我的步骤」的文件，崩了只坏这一块。 */}
+              <ErrorBoundary label="library" t={t}>
+                <Library
+                  t={t}
+                  templates={wf.catalog?.templates.nodes ?? []}
+                  focus={focus}
+                  onFocus={focusLibrary}
+                  onNewStep={() =>
+                    focusLibrary({
+                      kind: 'new',
+                      seed: { prompt: '', ...freshTemplateLook() },
+                      name: freeStepName('my-step'),
+                    })
+                  }
+                  onClose={toggleLibrary}
+                />
+              </ErrorBoundary>
             </div>
           )}
           <div className={css.top}>
-            <TopBar
-              t={t}
-              runId={runId}
-              slotRefs={slotRefs}
-              versionsPending={matchesVersion !== null && (!matchesVersion || isDirty(state))}
-              wf={wf}
-              libraryOpen={libraryOpen}
-              onToggleLibrary={toggleLibrary}
-              onTidy={relayout}
-              onLocate={locate}
-              onPreview={() => setPlanOpen(true)}
-              launch={{
-                blocked: launchBlocked,
-                starting,
-                session: props.session,
-                rows: sessionRows,
-                canCreate,
-                onRun: launch,
-              }}
-              onSettings={() => setSettingsOpen(true)}
-              onVersions={() => setVersionsOpen(true)}
-              runs={runs}
-              onOpenRun={openRun}
-              onOpenHub={() => {
-                setHubExport(false)
-                setHubOpen(true)
-              }}
-              onExport={() => {
-                setHubExport(true)
-                setHubOpen(true)
-              }}
-              onOpenWorkflow={openTemplate}
-              onNewWorkflow={newWorkflow}
-              onReloadRun={() => reloadRun.current?.()}
-            />
+            {/*
+             * 顶栏一层：名字下拉、执行、撤销重做都在这儿——画布或面板炸了它还得能用，所以它在那些边界
+             * 外面，自己也要有边界兜着（这里坏了，整个 tab 至少还能切工作流、切回对话）。
+             * `bar`：顶栏那条的高度由内容决定，崩溃态得自己占一格（`fill` 那种绝对定位会塌成 0 高）。
+             */}
+            <ErrorBoundary label="topbar" variant="bar" t={t}>
+              <TopBar
+                t={t}
+                runId={runId}
+                slotRefs={slotRefs}
+                versionsPending={matchesVersion !== null && (!matchesVersion || isDirty(state))}
+                wf={wfView}
+                libraryOpen={libraryOpen}
+                onToggleLibrary={toggleLibrary}
+                onTidy={relayout}
+                onLocate={locate}
+                onPreview={() => setPlanOpen(true)}
+                launch={{
+                  blocked: launchBlocked,
+                  starting,
+                  session: props.session,
+                  rows: sessionRows,
+                  canCreate,
+                  onRun: launch,
+                }}
+                onSettings={() => setSettingsOpen(true)}
+                onVersions={() => setVersionsOpen(true)}
+                runs={runsView}
+                onOpenRun={openRun}
+                onOpenHub={() => {
+                  setHubExport(false)
+                  setHubOpen(true)
+                }}
+                onExport={() => {
+                  setHubExport(true)
+                  setHubOpen(true)
+                }}
+                onOpenWorkflow={openTemplate}
+                onNewWorkflow={newWorkflow}
+                onReloadRun={() => reloadRun.current?.()}
+              />
+            </ErrorBoundary>
           </div>
         </ModalHostProvider>
         <TipLayer root={modalHost} />

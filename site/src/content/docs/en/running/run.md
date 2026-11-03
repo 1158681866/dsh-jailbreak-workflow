@@ -18,7 +18,7 @@ After you click **Run**, the plugin turns the workflow into a plan and gives it 
 | Run in a new session | Creates a new session and runs there. |
 | Run in another session | Runs in another session of this workspace; searchable, with running sessions marked. |
 
-If the workflow has [user inputs](/dsh-workflow-lite/en/materials/inputs/), fill in the **Before running** window first. You can also simply ask the model in the conversation to run it.
+If the workflow has [user inputs](/dsh-jailbreak-workflow/en/materials/inputs/), fill in the **Before running** window first. You can also simply ask the model in the conversation to run it.
 
 ![A running instance: steps light up by status](../../../../assets/shots/en/run-graph.webp)
 
@@ -45,11 +45,11 @@ Switch between **Preview** and **Source**, or click **Download**.
 | Fix the errors in Checks first | The **Checks** panel has errors. |
 | The graph is not saved yet | Wait for the save to finish. |
 
-For the execution mode and other settings, see [Workflow settings](/dsh-workflow-lite/en/settings/workflow/).
+For the execution mode and other settings, see [Workflow settings](/dsh-jailbreak-workflow/en/settings/workflow/).
 
 ## Instances and run state
 
-After you turn on **Record run state** in [Workflow settings](/dsh-workflow-lite/en/settings/workflow/), every run creates an instance, which stores the graph as it was and a state file. Switch to an instance to see progress by status, or change the state and notify the model.
+After you turn on **Record run state** in [Workflow settings](/dsh-jailbreak-workflow/en/settings/workflow/), every run creates an instance, which stores the graph as it was and a state file. Switch to an instance to see progress by status, or change the state and notify the model.
 
 ### View instances
 

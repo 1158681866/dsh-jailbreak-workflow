@@ -62,6 +62,6 @@ sidebar:
 
 ### 画布上的展示
 
-「画布上的展示」统一设置展示卡外观，默认「柔边镂空」；单张卡片可在「画布展示」里另选。四种外观见[画布展示](/dsh-workflow-lite/display/overview/)。
+「画布上的展示」统一设置展示卡外观，默认「柔边镂空」；单张卡片可在「画布展示」里另选。四种外观见[画布展示](/dsh-jailbreak-workflow/display/overview/)。
 
 界面语言支持中文和 English，跟随 DSH 的语言设置。

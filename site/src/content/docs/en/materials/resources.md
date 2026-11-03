@@ -38,7 +38,7 @@ The direction of the line decides read or write:
 | Skill | Choose from the skills detected, or type a name. |
 | Custom | Write some text, up to 20000 characters. |
 
-Each item can carry its own note telling the executor how to use it; for a file that is written, the note can set the format. **Change color and type** can turn an empty card into **Memory**; see [Memory](/dsh-workflow-lite/en/materials/memory/).
+Each item can carry its own note telling the executor how to use it; for a file that is written, the note can set the format. **Change color and type** can turn an empty card into **Memory**; see [Memory](/dsh-jailbreak-workflow/en/materials/memory/).
 
 ## Paths
 
@@ -54,4 +54,4 @@ Each item can carry its own note telling the executor how to use it; for a file 
 ## Notes
 
 - An identical item shows "Duplicate"; a skill that cannot be found in the current workspace gets a warning that it may not load when running.
-- To preview a file right on the canvas, see [Canvas display](/dsh-workflow-lite/en/display/overview/).
+- To preview a file right on the canvas, see [Canvas display](/dsh-jailbreak-workflow/en/display/overview/).

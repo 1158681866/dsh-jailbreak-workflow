@@ -11,7 +11,7 @@ Open the **Workflow hub** at the top left of the canvas to manage the instances 
 |---|---|
 | Instances | See all instances by workspace. |
 | Workflows | Manage workflows and versions, export and import. |
-| Memory | Manage the memory library; see [Memory](/dsh-workflow-lite/en/materials/memory/). |
+| Memory | Manage the memory library; see [Memory](/dsh-jailbreak-workflow/en/materials/memory/). |
 | Storage | See local data usage and clean up. |
 | Settings | Appearance and themes, plugin settings. |
 
@@ -36,7 +36,7 @@ The workflow list is on the left, and versions, export and import are on the rig
 
 ![The Workflows page: versions, export and import](../../../../assets/shots/en/hub-workflows.webp)
 
-For versions see [Versions](/dsh-workflow-lite/en/manage/versions/); for export and import see [Import and export](/dsh-workflow-lite/en/manage/import-export/).
+For versions see [Versions](/dsh-jailbreak-workflow/en/manage/versions/); for export and import see [Import and export](/dsh-jailbreak-workflow/en/manage/import-export/).
 
 ## Storage
 
@@ -54,7 +54,7 @@ Deleting a workflow does not delete its memories; delete them on the **Memory** 
 
 ## Settings
 
-The top part is [appearance and themes](/dsh-workflow-lite/en/settings/plugin/), and the bottom part is [plugin settings](/dsh-workflow-lite/en/settings/plugin/).
+The top part is [appearance and themes](/dsh-jailbreak-workflow/en/settings/plugin/), and the bottom part is [plugin settings](/dsh-jailbreak-workflow/en/settings/plugin/).
 
 ![The Settings page: appearance and plugin settings](../../../../assets/shots/en/hub-settings.webp)
 

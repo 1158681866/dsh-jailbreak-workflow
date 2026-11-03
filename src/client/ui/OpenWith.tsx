@@ -57,7 +57,7 @@ export function OpenWith(props: OpenWithProps): React.JSX.Element | null {
     let alive = true
     const known = desktop.cached(path)
     setApps(known === undefined ? { state: 'loading' } : { state: 'ready', apps: known })
-    void desktop.applications(path, new AbortController().signal).then((value) => {
+    void desktop.applications(path).then((value) => {
       if (!alive) return
       if (value === null) {
         if (known === undefined) setApps({ state: 'failed' })

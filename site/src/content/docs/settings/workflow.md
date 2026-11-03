@@ -46,7 +46,7 @@ sidebar:
 
 ## 记录运行状态
 
-开启后，每次编译会建一个实例：保存工作流快照，并在工作区 `.workflow-lite/runs/` 下建状态文件。执行期间只有主 agent 修改它；计划末尾会多一段「运行状态」。对下一次执行生效。见[实例与运行状态](/dsh-workflow-lite/running/run/#实例与运行状态)。
+开启后，每次编译会建一个实例：保存工作流快照，并在工作区 `.workflow-lite/runs/` 下建状态文件。执行期间只有主 agent 修改它；计划末尾会多一段「运行状态」。对下一次执行生效。见[实例与运行状态](/dsh-jailbreak-workflow/running/run/#实例与运行状态)。
 
 ## 产出根目录
 

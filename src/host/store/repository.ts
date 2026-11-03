@@ -570,6 +570,30 @@ type MutationOutcome =
 const MAX_BASELINES = 64
 const MAX_BASELINES_PER_NAME = 4
 
+/**
+ * `list()` 元数据的缓存上限（张数）。上百张图时，一次 `list` 从前是「每张图都 read + parse +
+ * 跑保存级校验」只为凑出 `{nodeCount, invalid}`；这里改成**先 `stat`**，只要图文件的修改时间、
+ * 字节数、以及"有没有同名目录"三者都没变，就直接复用上一条算好的条目，跳过读盘与解析。
+ *
+ * 键把 `mtimeMs`、`size`、同名目录都编进去。**本进程自己写的图一律强制失效**（`persist` 落盘后
+ * 调 {@link dropListEntries}），所以列表里绝不会出现"刚存过还显示旧样子"；mtime 比对只用来兜
+ * **外部程序改文件**那条路——文件系统的时间戳精度有限，同一次毫秒 tick 内改完、字节数又恰好没变
+ * （例如只改步骤显示名）时，列表里那一步的步数可能晚一帧才更新；图的内容本身不受影响
+ * （`read` / `load` / `compile` 从不走这份缓存）。改名、删除留下的是永不命中的旧键，靠 LRU 淘汰。
+ *
+ * 版本数（`countVersions`）**不进这里**：新建、删除一个版本不动图文件的 mtime，缓存了会漏失效；
+ * 它只是数目录里几个文件名，很便宜，每次照常数。竞态分支（`stat` 成功但随后读不到）也不入缓存。
+ */
+const MAX_LIST_CACHE = 512
+
+/** 缓存里的一条列表项（`versions` 由调用处每次补上）。 */
+type ListEntry = Pick<WorkflowEntry, 'name' | 'nodeCount' | 'updatedAt' | 'invalid' | 'reason'>
+
+/** `idKey` 归一名 + mtime + size + 同名目录是否存在 ⇒ 一条列表项的身份。 */
+function listCacheKey(name: string, mtimeMs: number, size: number, collides: boolean): string {
+  return `${idKey(name)}\u0000${mtimeMs}\u0000${size}\u0000${collides ? 'd' : '-'}`
+}
+
 /** 快照键的分隔符用的是**名字里不可能出现**的控制字符（`checkName` 禁控制字符）。 */
 function baselineKey(name: string, hash: string): string {
   return `${idKey(name)}\u0000${hash}`
@@ -586,13 +610,21 @@ class FileRepository implements Repository {
 
   /**
    * 基线快照：`"<图名>\0<整图哈希>" → document`，只记 `load()` / 上一次写落盘的那个版本。
-   * **它不服务任何读路径**（`list` / `read` / `compile` 永远直接读盘，不设内容缓存），
+   * **它不服务读路径的内容**（`read` / `compile` 永远直接读盘、不设内容缓存），
    * 只为了让 `save()` 拿得到 `mergeDocuments` 需要的 `base`。
+   * （`list()` 另有一份按 mtime 失效的元数据记忆，见 {@link MAX_LIST_CACHE}——那是列表项的
+   * `nodeCount`/`invalid`，不是图的内容，读图走的路径不碰它。）
    *
    * 同名留多个快照是必要的：画布与工具可能各自持有旧基线并发写，只留最新一份的话
    * 旧基线就退化成"以磁盘为基线"，会把对方刚落盘的改动当成自己的旧值顶掉。
    */
   private readonly baselines = new Map<string, WorkflowDocument>()
+
+  /**
+   * `list()` 的元数据记忆：`listCacheKey(...) → 列表项`。见 {@link MAX_LIST_CACHE} 那段——
+   * 键里编了 mtime 与 size，所以写一次图就自动换键，无需手动失效。
+   */
+  private readonly listCache = new Map<string, ListEntry>()
 
   /** 进程内写锁：一条 promise 链，写路径全程串行。 */
   private chain: Promise<void> = Promise.resolve()
@@ -831,6 +863,8 @@ class FileRepository implements Repository {
     }
     const writtenHash = await hashOf(finalText)
     this.rememberBaseline(name, writtenHash, document)
+    // 本进程刚写的图：列表项一律作废（不信 mtime 一定变），下一次 list 重新算。
+    this.dropListEntries(name)
     return ok({
       hash: writtenHash,
       document,
@@ -871,7 +905,7 @@ class FileRepository implements Repository {
     return {
       workflows,
       templates: {
-        nodes: await this.describeTemplates(templateNodes.names),
+        nodes: await this.describeTemplates(templateNodes.names, warnings),
       },
       warnings,
     }
@@ -902,6 +936,8 @@ class FileRepository implements Repository {
         return mapWriteFailure(error, file)
       }
       this.rememberBaseline(name, await hashOf(text), document)
+      // 与 `persist` 同理：本进程写过，列表项作废，别等 mtime 变。
+      this.dropListEntries(name)
       return ok({
         changed: [
           {
@@ -1010,6 +1046,7 @@ class FileRepository implements Repository {
         return mapWriteFailure(error, toAssets)
       }
       this.dropBaselines(from)
+      this.dropListEntries(from)
       return ok({
         changed: [
           {
@@ -1042,6 +1079,7 @@ class FileRepository implements Repository {
         return mapWriteFailure(error, file)
       }
       this.dropBaselines(name)
+      this.dropListEntries(name)
       return ok({
         changed: [{ kind: 'workflow', op: 'delete', id: name, detail: { dispatchRemoved: true } }],
         warnings: [],
@@ -1148,6 +1186,7 @@ class FileRepository implements Repository {
       }
       const hash = await hashOf(text)
       this.rememberBaseline(name, hash, restored)
+      this.dropListEntries(name)
       return ok({ hash, saved })
     })
   }
@@ -1294,6 +1333,8 @@ class FileRepository implements Repository {
         return mapWriteFailure(error, file)
       }
       this.rememberBaseline(name, await hashOf(text), request.current)
+      // 导入可能并入已有同名图：那份列表项已经不新鲜了。
+      this.dropListEntries(name)
       return ok({ name, versions: planned.map((entry) => entry.n), duplicates })
     })
   }
@@ -2257,28 +2298,38 @@ class FileRepository implements Repository {
 
   private async describeWorkflow(name: string, scan: DirScan): Promise<WorkflowEntry> {
     const file = workflowFile(this.dataDir, name)
-    let updatedAt = 0
-    try {
-      updatedAt = (await stat(file)).mtimeMs
-    } catch {
-      return { name, nodeCount: 0, updatedAt, invalid: true, reason: '文件在扫描后消失' }
+    // 竞态：扫描之后文件没了。不缓存这种结论（下次可能又不在，也可能换回来）。
+    const info = await stat(file).catch(() => null)
+    if (info === null) {
+      return { name, nodeCount: 0, updatedAt: 0, invalid: true, reason: '文件在扫描后消失' }
     }
+    const updatedAt = info.mtimeMs
+    const collides = scan.directories.some((dir) => dir.toLowerCase() === name.toLowerCase())
+    const key = listCacheKey(name, updatedAt, info.size, collides)
+    const cached = this.listCache.get(key)
+    if (cached !== undefined) {
+      // 命中：把这条挪到插入序末尾（LRU 的"最近用过"），返回的对象照旧新建，
+      // 免得调用处补 `versions` 时改动到缓存里的条目。
+      this.listCache.delete(key)
+      this.listCache.set(key, cached)
+      return { ...cached }
+    }
+
     const text = await readFileText(file)
     if (text === null) {
       return { name, nodeCount: 0, updatedAt, invalid: true, reason: '文件在扫描后消失' }
     }
     const parsed = readDocument(text)
     if (parsed.document === null) {
-      return {
+      return this.rememberListEntry(key, {
         name,
         nodeCount: 0,
         updatedAt,
         invalid: true,
         reason: describeProblems(onlyLevel(parsed.problems, 'save')),
-      }
+      })
     }
     const errors = onlyLevel(this.validate(parsed.document, name), 'save')
-    const collides = scan.directories.some((dir) => dir.toLowerCase() === name.toLowerCase())
     if (collides) {
       errors.unshift(
         saveProblem(
@@ -2288,18 +2339,33 @@ class FileRepository implements Repository {
       )
     }
     if (errors.length > 0) {
-      return {
+      return this.rememberListEntry(key, {
         name,
         nodeCount: parsed.document.nodes.length,
         updatedAt,
         invalid: true,
         reason: describeProblems(errors),
-      }
+      })
     }
-    return { name, nodeCount: parsed.document.nodes.length, updatedAt }
+    return this.rememberListEntry(key, { name, nodeCount: parsed.document.nodes.length, updatedAt })
   }
 
-  private async describeTemplates(names: readonly string[]): Promise<TemplateEntry[]> {
+  /** 记下稳定算出的列表项并按插入序淘汰最旧的（上限见 {@link MAX_LIST_CACHE}）。 */
+  private rememberListEntry(key: string, entry: ListEntry): WorkflowEntry {
+    this.listCache.delete(key)
+    this.listCache.set(key, entry)
+    while (this.listCache.size > MAX_LIST_CACHE) {
+      const oldest = this.listCache.keys().next()
+      if (oldest.done) break
+      this.listCache.delete(oldest.value)
+    }
+    return { ...entry }
+  }
+
+  private async describeTemplates(
+    names: readonly string[],
+    warnings: ToolWarning[],
+  ): Promise<TemplateEntry[]> {
     const entries: TemplateEntry[] = []
     for (const name of names) {
       const text = await readFileText(templateFile(this.dataDir, name))
@@ -2307,11 +2373,15 @@ class FileRepository implements Repository {
         entries.push({ name, invalid: true, reason: '文件在扫描后消失' })
         continue
       }
-      const errors = this.templateProblems(text).filter(
+      // 解析一次，判定与展示都用它：从前这里和 `templateProblems` 各 parse 一遍。
+      const parsed = parseNodeData(text)
+      const errors = parsed.problems.filter(
         (problem) => problem.level === 'save' || problem.level === 'compile',
       )
+      // 形状能读、但值得说一声的（比如把整个节点存成了模板）走警告通道，不挡步骤库显示。
+      warnings.push(...problemsToWarnings(parsed.problems))
       // 顺带给出它的描述：步骤库的条目上要显示"这一步做什么"。
-      const data = parseNodeData(text).data
+      const data = parsed.data
       const description = data.description
       const described = {
         ...(description === undefined || description === '' ? {} : { description }),
@@ -2361,6 +2431,14 @@ class FileRepository implements Repository {
       if (key.startsWith(prefix)) this.baselines.delete(key)
     }
   }
+
+  /** 改名、删除之后，这张图留在 `listCache` 里的键永远不会再命中——顺手摘掉，别占着。 */
+  private dropListEntries(name: string): void {
+    const prefix = `${idKey(name)}\u0000`
+    for (const key of [...this.listCache.keys()]) {
+      if (key.startsWith(prefix)) this.listCache.delete(key)
+    }
+  }
 }
 
 /**
@@ -2402,8 +2480,25 @@ function parseNodeData(text: string): { data: NodeData; problems: ValidationProb
   if (!isRecord(parsed)) {
     return { data: {}, problems: [saveProblem('schema_invalid', '节点模板必须是一个 JSON 对象')] }
   }
-  const data = readNodeData(parsed)
   const problems: ValidationProblem[] = []
+  // 最常见的手写错法：把画布上复制出来的**整个节点**（带 id / type / position，或套一层 data）
+  // 当成模板存了。按 `data` 本体读会得到一个空模板，只报「prompt 缺失」让人摸不着头脑——
+  // 这里先说清楚是形状不对。只报提示，不改挡与不挡（那条仍由下面的 `prompt_empty` 决定）。
+  if (
+    parsed.id !== undefined ||
+    parsed.type !== undefined ||
+    parsed.position !== undefined ||
+    isRecord(parsed.data)
+  ) {
+    problems.push({
+      level: 'hint',
+      code: 'invalid_template',
+      message:
+        '节点模板的文件顶层应当直接是节点的 data（label / description / icon / color / prompt / output）；' +
+        '这份带着 id / type / position 或套了一层 data，像是把整个节点存成了模板',
+    })
+  }
+  const data = readNodeData(parsed)
   if (data.prompt === undefined || data.prompt === '') {
     problems.push({
       level: 'compile',

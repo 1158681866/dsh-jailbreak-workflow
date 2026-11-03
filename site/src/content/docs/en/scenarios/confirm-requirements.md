@@ -23,7 +23,7 @@ After you click **Run**, a **Before running** window appears first. The run star
 
 2. Draw a line from the input card to the steps that need the answer: connect the module to Recon and Implement, the strictness only to Review, and the deliverables only to Summarise. Without a line, every step can see it.
 
-For what each setting means, see [Questions before running](/dsh-workflow-lite/en/materials/inputs/).
+For what each setting means, see [Questions before running](/dsh-jailbreak-workflow/en/materials/inputs/).
 
 ![The settings panel of a user input: question, answer type, options](../../../../assets/shots/en/input-panel.webp)
 

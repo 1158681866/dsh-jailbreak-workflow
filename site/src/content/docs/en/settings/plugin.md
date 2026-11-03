@@ -61,6 +61,6 @@ Open **Workflow hub** → **Settings** and choose a **Light theme** and a **Dark
 
 ### Displays on the canvas
 
-**Displays on the canvas** sets the look of display cards for everything, **Soft cut-out** by default; a single card can pick another under **Canvas display**. The four looks are described in [Canvas display](/dsh-workflow-lite/en/display/overview/).
+**Displays on the canvas** sets the look of display cards for everything, **Soft cut-out** by default; a single card can pick another under **Canvas display**. The four looks are described in [Canvas display](/dsh-jailbreak-workflow/en/display/overview/).
 
 The interface language supports Chinese and English, following DSH's language setting.

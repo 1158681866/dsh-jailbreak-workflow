@@ -22,6 +22,6 @@ dsh web
 2. Enter `@xiaoso/dsh-workflow-lite` and click install.
 3. Restart DeepSeek Harness.
 
-After a successful install, a **Workflows** tab appears at the top of the session page. If it does not, see the [FAQ](/dsh-workflow-lite/en/faq/).
+After a successful install, a **Workflows** tab appears at the top of the session page. If it does not, see the [FAQ](/dsh-jailbreak-workflow/en/faq/).
 
-Next: [Create your first workflow](/dsh-workflow-lite/en/start/first-workflow/).
+Next: [Create your first workflow](/dsh-jailbreak-workflow/en/start/first-workflow/).

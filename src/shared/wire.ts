@@ -377,7 +377,12 @@ export interface MemoryVersionNoteRequest {
   note: string
 }
 
-/** `graph/templates` —— 节点模板库（「我的步骤」）。 */
+/**
+ * `graph/templates` —— 节点模板库（「我的步骤」）只列名字。
+ *
+ * 画布不走这一条：模板清单随 `graph/list` 的 `ListResult.templates` 一起回（步骤库一次就要拿全）。
+ * 它仍是公开端点，`tests/e2e-canvas.mjs` 按工具的口径验它——**别因为"客户端没调用"就当死端点删**。
+ */
 export type GraphTemplatesRequest = Record<string, never>
 export interface GraphTemplatesResponse {
   nodes: TemplateEntry[]
@@ -997,7 +1002,7 @@ export interface StorageStats {
 
 // ── 插件设置（工作流中心「设置」页）──────────────────────
 
-/** 设置页能改的几项（插件 Config 里给人用的那几个，`routePrefix` 这类接线细节不露）。 */
+/** 设置页能改的几项（插件 Config 里给人用的那几个；接线细节不进这份 schema，也就不露）。 */
 export const PLUGIN_CONFIG_KEYS = [
   'dataDir',
   'maxNodes',

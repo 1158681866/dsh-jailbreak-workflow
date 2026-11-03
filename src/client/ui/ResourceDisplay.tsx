@@ -48,7 +48,7 @@ import type {
 } from '../../shared/wire.ts'
 import { publishFolderFacts, publishTableHead } from '../app/cardFacts.ts'
 import { type DisplayStat, displayKey } from '../app/useDisplayStats.ts'
-import { useRunFile, useRunHistory, useRunImages } from '../app/useRunFile.ts'
+import { useOutputHistory, useRunFile, useRunImages } from '../app/useRunFile.ts'
 import { useRunLines } from '../app/useRunLines.ts'
 import type { T } from '../i18n.ts'
 import { type Display, displayFootprint } from '../model/display.ts'
@@ -1556,7 +1556,7 @@ function RunFileBody(props: {
   const chips = (content: React.ReactNode): React.ReactNode =>
     slot?.status ? createPortal(<span className={css.chips}>{content}</span>, slot.status) : content
   const stat = run.stats[displayKey(node, display.item)]
-  const history = useRunHistory(
+  const history = useOutputHistory(
     run.rpc,
     run.instance,
     props.seen ? { node, item: display.item } : null,

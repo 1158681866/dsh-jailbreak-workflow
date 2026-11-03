@@ -16,7 +16,7 @@ import { extensionOf } from '../../shared/fileKind.ts'
 import type { LineFilter } from '../../shared/types.ts'
 import type { RunFileResponse, RunLinesResponse } from '../../shared/wire.ts'
 import type { Desktop } from '../app/desktop.ts'
-import { type FileTarget, useRunFile, useRunHistory, useRunImages } from '../app/useRunFile.ts'
+import { type FileTarget, useOutputHistory, useRunFile, useRunImages } from '../app/useRunFile.ts'
 import type { T } from '../i18n.ts'
 import { fileBaseName, fileKindOf, formatBytes } from '../model/fileKind.ts'
 import { dotIndex, historyLine, versionName } from '../model/outputHistory.ts'
@@ -152,7 +152,7 @@ export function FileViewer(props: {
       ? { node: props.target.node, item: props.target.item }
       : null
   // 现在的文件读回来了再问各版（文件变了再问一次）。
-  const history = useRunHistory(
+  const history = useOutputHistory(
     props.rpc,
     props.instance,
     item,

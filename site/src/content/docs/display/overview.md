@@ -18,15 +18,15 @@ sidebar:
 
 | 内容 | 页面 |
 |---|---|
-| 图片 | [图片](/dsh-workflow-lite/display/image/) |
-| HTML 网页、看板 | [网页与看板](/dsh-workflow-lite/display/web/) |
-| Markdown | [Markdown](/dsh-workflow-lite/display/markdown/) |
-| 日志、纯文本 | [日志与纯文本](/dsh-workflow-lite/display/log/) |
-| CSV、TSV | [表格](/dsh-workflow-lite/display/table/) |
-| JSON、代码、配置 | [JSON、代码与配置](/dsh-workflow-lite/display/text/) |
-| 文件夹 | [文件夹与图片墙](/dsh-workflow-lite/display/folder/) |
+| 图片 | [图片](/dsh-jailbreak-workflow/display/image/) |
+| HTML 网页、看板 | [网页与看板](/dsh-jailbreak-workflow/display/web/) |
+| Markdown | [Markdown](/dsh-jailbreak-workflow/display/markdown/) |
+| 日志、纯文本 | [日志与纯文本](/dsh-jailbreak-workflow/display/log/) |
+| CSV、TSV | [表格](/dsh-jailbreak-workflow/display/table/) |
+| JSON、代码、配置 | [JSON、代码与配置](/dsh-jailbreak-workflow/display/text/) |
+| 文件夹 | [文件夹与图片墙](/dsh-jailbreak-workflow/display/folder/) |
 
-网址和 Skill 不能展示。循环里每一轮的产出还可以回看对比，见[各轮产出回看](/dsh-workflow-lite/display/rounds/)。
+网址和 Skill 不能展示。循环里每一轮的产出还可以回看对比，见[各轮产出回看](/dsh-jailbreak-workflow/display/rounds/)。
 
 ## 打开展示
 
@@ -85,7 +85,7 @@ sidebar:
 | 纯镂空 | 连画布点阵也透过来。 |
 | 毛玻璃 | 半透明卡面，后面的画布模糊透出。 |
 
-默认外观在「工作流中心 → 设置 → 外观」选择，见[插件设置与配色](/dsh-workflow-lite/settings/plugin/)。
+默认外观在「工作流中心 → 设置 → 外观」选择，见[插件设置与配色](/dsh-jailbreak-workflow/settings/plugin/)。
 
 ## 注意
 

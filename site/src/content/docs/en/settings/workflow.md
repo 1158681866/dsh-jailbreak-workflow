@@ -46,7 +46,7 @@ Before running, the run is set as the session goal, so when the main agent stops
 
 ## Record run state
 
-When on, each compile creates an instance: it stores a snapshot of the workflow and creates a state file under `.workflow-lite/runs/` in the workspace. Only the main agent edits it during a run, and the plan gets an extra "Run state" section at the end. It takes effect on the next run. See [Instances and run state](/dsh-workflow-lite/en/running/run/#instances-and-run-state).
+When on, each compile creates an instance: it stores a snapshot of the workflow and creates a state file under `.workflow-lite/runs/` in the workspace. Only the main agent edits it during a run, and the plan gets an extra "Run state" section at the end. It takes effect on the next run. See [Instances and run state](/dsh-jailbreak-workflow/en/running/run/#instances-and-run-state).
 
 ## Output root
 

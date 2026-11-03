@@ -38,7 +38,7 @@ sidebar:
 | Skill | 从识别到的 Skill 中挑选，或手写名字。 |
 | 自定义 | 写一段文字，最多 20000 字。 |
 
-每一项可以单独写「说明」，告诉执行者怎么用；写入的文件可在说明里约定格式。「换颜色与类型」可把空卡换成「记忆」，见[记忆](/dsh-workflow-lite/materials/memory/)。
+每一项可以单独写「说明」，告诉执行者怎么用；写入的文件可在说明里约定格式。「换颜色与类型」可把空卡换成「记忆」，见[记忆](/dsh-jailbreak-workflow/materials/memory/)。
 
 ## 路径
 
@@ -54,4 +54,4 @@ sidebar:
 ## 注意
 
 - 内容重复时提示「重复了」；Skill 在当前工作区找不到时，提示执行时可能加载不到。
-- 在画布上直接预览文件，见[画布展示](/dsh-workflow-lite/display/overview/)。
+- 在画布上直接预览文件，见[画布展示](/dsh-jailbreak-workflow/display/overview/)。

@@ -18,7 +18,7 @@ sidebar:
 | 新建会话执行 | 新建会话并执行。 |
 | 选一个会话执行 | 在本工作区其他会话中执行，可搜索，运行中的会话有标记。 |
 
-有[用户输入](/dsh-workflow-lite/materials/inputs/)时，先在「执行前填写」窗口填好。也可以直接在对话中让模型执行。
+有[用户输入](/dsh-jailbreak-workflow/materials/inputs/)时，先在「执行前填写」窗口填好。也可以直接在对话中让模型执行。
 
 ![执行中的实例：各步骤按状态点亮](../../../assets/shots/run-graph.webp)
 
@@ -45,11 +45,11 @@ sidebar:
 | 先修好检查里的错误再执行 | 「检查」面板有错误。 |
 | 图还没存好 | 稍等保存完成。 |
 
-执行方式等设置见[工作流设置](/dsh-workflow-lite/settings/workflow/)。
+执行方式等设置见[工作流设置](/dsh-jailbreak-workflow/settings/workflow/)。
 
 ## 实例与运行状态
 
-在[工作流设置](/dsh-workflow-lite/settings/workflow/)打开「记录运行状态」后，每次执行生成一个实例，保存当时那张图和一份状态文件。切换到实例，按状态查看进度，也可以修改状态并通知模型。
+在[工作流设置](/dsh-jailbreak-workflow/settings/workflow/)打开「记录运行状态」后，每次执行生成一个实例，保存当时那张图和一份状态文件。切换到实例，按状态查看进度，也可以修改状态并通知模型。
 
 ### 查看实例
 

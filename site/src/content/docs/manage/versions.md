@@ -25,9 +25,9 @@ sidebar:
 
 ## 记忆的版本
 
-对话框里有「工作流」和「记忆」两栏。保存工作流版本时勾选「连同 N 条记忆」，每条记忆也各存一版，没变的不存。见[记忆](/dsh-workflow-lite/materials/memory/)。
+对话框里有「工作流」和「记忆」两栏。保存工作流版本时勾选「连同 N 条记忆」，每条记忆也各存一版，没变的不存。见[记忆](/dsh-jailbreak-workflow/materials/memory/)。
 
 ## 注意
 
 - 删除工作流时，它的所有版本一起删除，不可恢复。
-- 导出时只导出已保存的版本，见[导入与导出](/dsh-workflow-lite/manage/import-export/)。
+- 导出时只导出已保存的版本，见[导入与导出](/dsh-jailbreak-workflow/manage/import-export/)。

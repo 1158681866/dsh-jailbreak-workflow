@@ -23,7 +23,7 @@ sidebar:
 
 2. 从输入卡拖线到需要这个回答的步骤：模块连到「侦察」「实现」，严格程度只连「审查」，产出内容只连「汇总」。不连线则所有步骤都能看到。
 
-各项含义见[执行前提问](/dsh-workflow-lite/materials/inputs/)。
+各项含义见[执行前提问](/dsh-jailbreak-workflow/materials/inputs/)。
 
 ![用户输入的设置面板：问题、回答方式、选项](../../../assets/shots/input-panel.webp)
 

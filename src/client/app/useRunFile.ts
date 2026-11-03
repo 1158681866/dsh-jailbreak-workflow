@@ -124,8 +124,11 @@ export function fileTargetKey(target: FileTarget | null): string {
 /**
  * 一份产出存下的各版（`run/history`）。`revision` 是 `run/stat` 报的变化次数：变了才重问，`0`（一版都没有）就不问。
  * `null` = 还没问到（或一版都没有）。
+ *
+ * 别和 `app/useRunHistory.ts` 那个同名 hook 混：它管的是实例视图里「图的改动栈 + 状态草稿栈」排成一条
+ * 时间线，跟一份产出的历史版本无关。两个名字原本撞车，这里按实际含义改名（与 `model/outputHistory.ts` 同一件事）。
  */
-export function useRunHistory(
+export function useOutputHistory(
   rpc: WorkflowLiteRpc,
   instance: string,
   target: { node: string; item: number } | null,

@@ -17,6 +17,8 @@ import { COORD_DECIMALS } from './limits.ts'
 import { normalizeRoot, WORKSPACE_ROOT } from './outputPaths.ts'
 import { memoryPath, upgradeWorkflowPath } from './pathVars.ts'
 import {
+  DOCUMENT_KEYS,
+  EDGE_KEYS,
   type EdgeData,
   EXECUTION_MODES,
   FOLDER_MATCH_MAX,
@@ -34,6 +36,7 @@ import {
   type LineFilter,
   type LineView,
   MEMORY_TYPES,
+  NODE_KEYS,
   NODE_TYPE,
   type NodeData,
   type OutputSpec,
@@ -91,6 +94,110 @@ const VIEW_KEYS = [
 ] as const
 /** edge 的 data 键序。 */
 const EDGE_DATA_KEYS = ['when', 'label', 'handoff', 'update'] as const
+
+/** 工作流设置的已知键（`readSettings` 的口径）。 */
+const SETTINGS_KEYS: readonly string[] = ['outputRoot', 'mode', 'reuse', 'setGoal', 'runState']
+/** viewport 的已知键。 */
+const VIEWPORT_KEYS: readonly string[] = ['x', 'y', 'zoom']
+
+/** 对象里不在键序表中的键（排序保证消息稳定）。 */
+function extraKeys(raw: Record<string, unknown>, allowed: readonly string[]): string[] {
+  return Object.keys(raw)
+    .filter((key) => !allowed.includes(key))
+    .sort()
+}
+
+/**
+ * React Flow 每帧都在改的运行时字段（`measured` / `selected` / `dragging` / `width` …）。
+ * 读入时丢掉它们是对的——持久化就是永不停止的假 diff，所以只归一条**提示**；
+ * 剩下的未知键多半是手改 JSON 打错了键名，那种静默吞掉才害人，归**警告**。
+ * 两个列表按元素各报一条，避免逐键刷屏（一张图几十帧就几十条）。
+ */
+const RUNTIME_FIELD_KEYS = new Set<string>([
+  'animated',
+  'className',
+  'computedPosition',
+  'connectable',
+  'dragHandle',
+  'dragging',
+  'edge',
+  'expandParent',
+  'extent',
+  'hidden',
+  'height',
+  'id',
+  'interactionWidth',
+  'label',
+  'labelBgBorderRadius',
+  'labelBgPadding',
+  'labelBgStyle',
+  'labelShowBg',
+  'labelStyle',
+  'labelX',
+  'labelY',
+  'markerEnd',
+  'markerMid',
+  'markerStart',
+  'measured',
+  'parentNode',
+  'points',
+  'positionAbsolute',
+  'selected',
+  'sourceNode',
+  'sourcePosition',
+  'sourceX',
+  'sourceY',
+  'style',
+  'targetNode',
+  'targetPosition',
+  'targetX',
+  'targetY',
+  'type',
+  'width',
+  'x1',
+  'x2',
+  'y1',
+  'y2',
+  'zIndex',
+])
+
+/**
+ * 一个对象里契约之外的键：丢掉的运行时字段报一条提示，其余报一条警告。
+ * @param where - 消息里对这一处的称呼（「顶层」「节点 scan」「边 a->b」…）。
+ */
+function reportExtraKeys(
+  problems: ValidationProblem[],
+  raw: Record<string, unknown>,
+  allowed: readonly string[],
+  where: string,
+  extra?: Pick<ValidationProblem, 'node' | 'edge'>,
+): void {
+  const unknown = extraKeys(raw, allowed)
+  if (unknown.length === 0) return
+  const runtime: string[] = []
+  const foreign: string[] = []
+  for (const key of unknown) (RUNTIME_FIELD_KEYS.has(key) ? runtime : foreign).push(key)
+  if (foreign.length > 0) {
+    problems.push(
+      problem(
+        'warning',
+        'unknown_fields_dropped',
+        `${where} 有契约之外的字段 ${foreign.join('、')}，已丢弃（下次保存就不在了）——键名打错时这里会指出来`,
+        extra,
+      ),
+    )
+  }
+  if (runtime.length > 0) {
+    problems.push(
+      problem(
+        'hint',
+        'runtime_fields_dropped',
+        `${where} 带着 React Flow 的运行时字段 ${runtime.join('、')}，读入时丢掉（它们每帧都在变，存下来就是假 diff）`,
+        extra,
+      ),
+    )
+  }
+}
 
 /** 坐标归一化：`round(v * 100) / 100`（2 位小数）。 */
 export function normalizeCoord(value: number): number {
@@ -748,6 +855,7 @@ export function normalizeDocument(input: unknown): ParseOutcome {
       problems.push(problem('save', 'node_id_missing', `nodes[${index}] 缺少 id`))
       continue
     }
+    reportExtraKeys(problems, raw, NODE_KEYS, `节点 ${raw.id}`, { node: raw.id })
     const position = readPoint(raw.position)
     if (position === null) {
       problems.push(
@@ -757,6 +865,11 @@ export function normalizeDocument(input: unknown): ParseOutcome {
       )
     }
     if (raw.type === RESOURCE_TYPE) {
+      if (isPlainObject(raw.data)) {
+        reportExtraKeys(problems, raw.data, RESOURCE_KEYS, `节点 ${raw.id} 的 data`, {
+          node: raw.id,
+        })
+      }
       nodes.push({
         id: raw.id,
         type: RESOURCE_TYPE,
@@ -766,6 +879,9 @@ export function normalizeDocument(input: unknown): ParseOutcome {
       continue
     }
     if (raw.type === INPUT_TYPE) {
+      if (isPlainObject(raw.data)) {
+        reportExtraKeys(problems, raw.data, INPUT_KEYS, `节点 ${raw.id} 的 data`, { node: raw.id })
+      }
       nodes.push({
         id: raw.id,
         type: INPUT_TYPE,
@@ -785,6 +901,9 @@ export function normalizeDocument(input: unknown): ParseOutcome {
           },
         ),
       )
+    }
+    if (isPlainObject(raw.data)) {
+      reportExtraKeys(problems, raw.data, DATA_KEYS, `节点 ${raw.id} 的 data`, { node: raw.id })
     }
     nodes.push({
       id: raw.id,
@@ -814,6 +933,12 @@ export function normalizeDocument(input: unknown): ParseOutcome {
       continue
     }
     const data = readEdgeData(raw.data)
+    reportExtraKeys(problems, raw, EDGE_KEYS, `边 ${raw.id}`, { edge: raw.id })
+    if (isPlainObject(raw.data)) {
+      reportExtraKeys(problems, raw.data, EDGE_DATA_KEYS, `边 ${raw.id} 的 data`, {
+        edge: raw.id,
+      })
+    }
     edges.push({
       id: raw.id,
       source: raw.source,
@@ -829,6 +954,14 @@ export function normalizeDocument(input: unknown): ParseOutcome {
     problems.push(
       problem('hint', 'position_filled', 'viewport 缺失或非法，已回落 {x:0,y:0,zoom:1}'),
     )
+  }
+
+  reportExtraKeys(problems, input, DOCUMENT_KEYS, '顶层')
+  if (isPlainObject(input.viewport)) {
+    reportExtraKeys(problems, input.viewport, VIEWPORT_KEYS, 'viewport')
+  }
+  if (isPlainObject(input.settings)) {
+    reportExtraKeys(problems, input.settings, SETTINGS_KEYS, 'settings')
   }
 
   const settings = readSettings(input.settings)

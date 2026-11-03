@@ -43,4 +43,4 @@ sidebar:
 ## 注意
 
 - 让写图片的步骤按卡片比例出图（「让模型适配展示」默认开启），卡片里看起来更合适。
-- 循环里每一轮的图片会各存一版，可并排或拖动分隔线对比，见[各轮产出回看](/dsh-workflow-lite/display/rounds/)。
+- 循环里每一轮的图片会各存一版，可并排或拖动分隔线对比，见[各轮产出回看](/dsh-jailbreak-workflow/display/rounds/)。

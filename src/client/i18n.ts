@@ -1478,6 +1478,10 @@ export const zh = {
   'ask.otherPlaceholder': '自己填写',
   'ask.where': '执行位置：{where}',
 
+  'shell.crashed': '工作流视图出了问题',
+  'shell.crashedHint': '图和数据都在磁盘上，没有受损。可以重试这一块，或切到别的标签页再回来。',
+  'shell.retry': '重试',
+
   'error.generic': '操作失败',
 } as const
 
@@ -3030,6 +3034,11 @@ export const en: Record<LocaleKey, string> = {
   'ask.other': 'Other',
   'ask.otherPlaceholder': 'Write your own',
   'ask.where': 'Runs in: {where}',
+
+  'shell.crashed': 'The workflow view hit a problem',
+  'shell.crashedHint':
+    'Your graphs and data are safe on disk. Retry this view, or switch to another tab and back.',
+  'shell.retry': 'Retry',
 
   'error.generic': 'Something went wrong',
 }

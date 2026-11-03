@@ -1,7 +1,7 @@
 /**
  * dsh-workflow-lite — 工作流中心「设置」页的后端：经 DSH 的设置服务（`ctx.settings`）读写本插件自己那一行配置。
  *
- * - 只露 {@link PLUGIN_CONFIG_KEYS} 那几项；`routePrefix` 这类接线细节不给人改。
+ * - 只露 {@link PLUGIN_CONFIG_KEYS} 那几项；接线细节（路由通道这类）不在这份 schema 里，也就不给人改。
  * - 写入走设置服务的路径编辑（`mutate`）：它按完整 Config 校验、落进当前 profile 的 patch、
  *   就地更新运行中的活配置；带修订号，别人先改过就拒绝，不悄悄覆盖。
  * - 设置服务不在（精简的 profile）时只读：页面照样显示现值，告诉人这里改不了。

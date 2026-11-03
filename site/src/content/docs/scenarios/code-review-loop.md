@@ -27,7 +27,7 @@ sidebar:
    - 「修复」→「审查」，形成循环。
    - 「审查」→「汇总」，条件「通过」，这是出口。
 
-连线操作见[连线与条件](/dsh-workflow-lite/editing/steps/#连线)，概念见[循环与回退](/dsh-workflow-lite/editing/loops/)。
+连线操作见[连线与条件](/dsh-jailbreak-workflow/editing/steps/#连线)，概念见[循环与回退](/dsh-jailbreak-workflow/editing/loops/)。
 
 可选：
 
@@ -40,4 +40,4 @@ sidebar:
 
 ![第二轮审查正在执行，已完成的步骤点亮](../../../assets/shots/run-graph.webp)
 
-每一轮的产出版本可以回看，见[各轮产出回看](/dsh-workflow-lite/display/rounds/)。
+每一轮的产出版本可以回看，见[各轮产出回看](/dsh-jailbreak-workflow/display/rounds/)。

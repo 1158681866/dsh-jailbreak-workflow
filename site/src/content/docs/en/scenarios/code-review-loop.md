@@ -27,7 +27,7 @@ Implement → Review ──Pass──→ Summarise
    - Fix → Review, which closes the loop.
    - Review → Summarise, condition **Pass**; this is the exit.
 
-For how to draw connections, see [Connections and conditions](/dsh-workflow-lite/en/editing/steps/#connections); for the concept, see [Loops and rollback](/dsh-workflow-lite/en/editing/loops/).
+For how to draw connections, see [Connections and conditions](/dsh-jailbreak-workflow/en/editing/steps/#connections); for the concept, see [Loops and rollback](/dsh-jailbreak-workflow/en/editing/loops/).
 
 Optional:
 
@@ -40,4 +40,4 @@ Turn on **Record run state** and click **Run**. In the instance you can see whic
 
 ![The second review round is running; finished steps are lit](../../../../assets/shots/en/run-graph.webp)
 
-The output of every round can be looked back at; see [Reviewing each round's output](/dsh-workflow-lite/en/display/rounds/).
+The output of every round can be looked back at; see [Reviewing each round's output](/dsh-jailbreak-workflow/en/display/rounds/).

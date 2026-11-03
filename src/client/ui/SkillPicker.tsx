@@ -46,6 +46,9 @@ export function SkillPicker(props: {
 
   useEffect(() => {
     let alive = true
+    // 打开这一次先丢掉清单记忆再去问：模型可能在会话里刚装了或删了 skill，
+    // 那份「一页只问一次」的记忆会把旧清单一直摆着。新数据回来之前旧的照显示，不闪空。
+    props.host.refreshSkills()
     void props.host.skills().then(
       (next) => {
         if (alive) setCatalog(next)

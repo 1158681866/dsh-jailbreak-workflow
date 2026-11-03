@@ -14,7 +14,7 @@ sidebar:
 用对话建图时，模型在有循环和指标的流程里会自动建看板；其他流程说一句「加一个看板」即可。手动搭建步骤如下：
 
 1. **让步骤产出一个成品文件**：在「汇总」等步骤的提示词和生成规则里写明文件（如 `dashboard.html` 或 `report.md`）、内容怎么组织，以及每轮覆盖同一个文件。
-2. **变成资源卡**：从步骤右侧的点拖线到空白处，选「产出文件」。见[资源](/dsh-workflow-lite/materials/resources/)。
+2. **变成资源卡**：从步骤右侧的点拖线到空白处，选「产出文件」。见[资源](/dsh-jailbreak-workflow/materials/resources/)。
 3. **打开展示**：选中资源卡，在右侧面板打开「在画布上展示」。
 
 | 内容 | 建议 |
@@ -23,7 +23,7 @@ sidebar:
 | Markdown 报告 | 「中」。 |
 | 图片 | 摆放用「适应」。 |
 
-「让模型适配展示」默认开启，写文件的步骤会知道卡片多大。更多设置见[画布展示](/dsh-workflow-lite/display/overview/)。
+「让模型适配展示」默认开启，写文件的步骤会知道卡片多大。更多设置见[画布展示](/dsh-jailbreak-workflow/display/overview/)。
 
 ## 执行与回看
 
@@ -35,7 +35,7 @@ sidebar:
 
 ![查看框的「版本」：挑任意一轮查看](../../../assets/shots/rounds-viewer.webp)
 
-详见[各轮产出回看](/dsh-workflow-lite/display/rounds/)。
+详见[各轮产出回看](/dsh-jailbreak-workflow/display/rounds/)。
 
 ## 注意
 

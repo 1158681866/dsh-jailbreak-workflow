@@ -22,6 +22,6 @@ dsh web
 2. 填入 `@xiaoso/dsh-workflow-lite`，点击「安装」。
 3. 重启 DeepSeek Harness。
 
-安装成功后，会话页顶部出现「工作流」标签页。没有出现时见[常见问题](/dsh-workflow-lite/faq/)。
+安装成功后，会话页顶部出现「工作流」标签页。没有出现时见[常见问题](/dsh-jailbreak-workflow/faq/)。
 
-下一步：[创建第一个工作流](/dsh-workflow-lite/start/first-workflow/)。
+下一步：[创建第一个工作流](/dsh-jailbreak-workflow/start/first-workflow/)。

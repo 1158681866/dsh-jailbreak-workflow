@@ -68,7 +68,7 @@ After you confirm, a dialog "Import to '…'?" states the number of versions, ma
 ## Notes
 
 - Import checks paths and content; a package newer than the current plugin is rejected, and the plugin needs upgrading.
-- `{workflow}` in a resource path means the workflow's own materials folder; see [Resources](/dsh-workflow-lite/en/materials/resources/).
+- `{workflow}` in a resource path means the workflow's own materials folder; see [Resources](/dsh-jailbreak-workflow/en/materials/resources/).
 
 ## Export as a skill
 

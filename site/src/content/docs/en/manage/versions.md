@@ -25,9 +25,9 @@ A yellow dot on the **Versions** icon means the current content has not been sav
 
 ## Versions of memories
 
-The dialog has two tabs, **Workflow** and **Memory**. Tick "With N memories" when saving a workflow version and each memory is saved as a version too; unchanged ones are skipped. See [Memory](/dsh-workflow-lite/en/materials/memory/).
+The dialog has two tabs, **Workflow** and **Memory**. Tick "With N memories" when saving a workflow version and each memory is saved as a version too; unchanged ones are skipped. See [Memory](/dsh-jailbreak-workflow/en/materials/memory/).
 
 ## Notes
 
 - Deleting a workflow deletes all its versions with it, and this cannot be undone.
-- Export includes saved versions only; see [Import and export](/dsh-workflow-lite/en/manage/import-export/).
+- Export includes saved versions only; see [Import and export](/dsh-jailbreak-workflow/en/manage/import-export/).
