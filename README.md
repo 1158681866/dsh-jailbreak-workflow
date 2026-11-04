@@ -9,7 +9,7 @@
 <div align="center">
 
 简体中文 | [English](./README.en.md)
-
+破甲技术交流论坛：https://openorigin.link/    邀请码：CESFAVBR
 
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的软工作流插件：**在画布上设计流程，编译成一份计划提示词，交给模型按计划执行。**
 
