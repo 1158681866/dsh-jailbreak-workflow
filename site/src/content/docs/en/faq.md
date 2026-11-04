@@ -39,6 +39,14 @@ These two conditions need the upstream step to give a verdict at the end of its 
 
 The file is over the display limit. Double-click the card to open the viewer, or open it with another program, or have the step produce a leaner version. See [Canvas display](/dsh-jailbreak-workflow/en/display/overview/).
 
+## A part of the workflow view turned into a notice card
+
+That view hit a rendering error; the rest of the page keeps working. Your graphs and data are safe on disk. Click **Retry** on the notice card, or switch to another tab and back.
+
+## A field disappeared after hand-editing the workflow JSON
+
+Keys that are misspelled or otherwise unrecognized are dropped and disappear once saved. The **Checks** panel lists them under **Warnings**; fix the name and save again.
+
 ## Export says the current content has not been saved as a version
 
 Export includes saved versions only. Save a version under **Versions** in the top bar first; see [Versions](/dsh-jailbreak-workflow/en/manage/versions/).

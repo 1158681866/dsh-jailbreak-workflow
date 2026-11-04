@@ -53,7 +53,7 @@ After you turn on **Record run state** in [Workflow settings](/dsh-jailbreak-wor
 
 ### View instances
 
-- The workflow dropdown in the canvas top bar searches workflows and instances; the current instance of this session is marked **Current**.
+- The workflow dropdown in the canvas top bar searches workflows and instances; the current instance of this session is marked **Current**. With many workflows it lists the 12 most recent and the rest hide behind **Show all**; searching always shows everything.
 - The **Instances** page of the **Workflow hub** lists all instances by workspace.
 - When the model starts a workflow, the canvas shows "The model just started running a workflow in this session"; click **View instance**.
 

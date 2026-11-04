@@ -71,6 +71,6 @@ Files are not passed through the handoff; put them in a resource. Click **Edit h
 | Undo, Redo | Undo and redo edits. |
 | Preview plan | Shows the compiled plan. |
 
-Edits are saved automatically; the top bar shows **Saving**, **Saved**, **Unsaved** or **Save failed**. If the file was changed elsewhere, you are asked to **Reload**, and on a conflict you can choose **Keep mine** or **Use disk**. The **Checks** panel lists **Errors**, **Must fix**, **Warnings** and **Suggestions**; when it shows **No problems** the workflow can run, and with errors it cannot.
+Edits are saved automatically; the top bar shows **Saving**, **Saved**, **Unsaved** or **Save failed**. If the file was changed elsewhere, you are asked to **Reload**, and on a conflict you can choose **Keep mine** or **Use disk**. The **Checks** panel lists **Errors**, **Must fix**, **Warnings** and **Suggestions**; when it shows **No problems** the workflow can run, and with errors it cannot. Hand-edit a workflow's JSON with a misspelled key and the **Checks** panel flags the unrecognized fields as a **Warning** (saving drops them).
 
 For the autosave delay and the step limit, see [Plugin settings and themes](/dsh-jailbreak-workflow/en/settings/plugin/).

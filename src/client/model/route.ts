@@ -16,6 +16,8 @@
  * @module @xiaoso/dsh-workflow-lite/client/model/route
  */
 
+import { gridOf } from './boxGrid.ts'
+
 export type Side = 'top' | 'right' | 'bottom' | 'left'
 
 export interface Rect {
@@ -187,7 +189,7 @@ export const LOOP_REACH = 64
 export function freeLane(boxes: readonly Rect[], x1: number, x2: number, from: number): number {
   const gap = 18
   const [left, right] = x1 <= x2 ? [x1, x2] : [x2, x1]
-  const across = boxes.filter((box) => box.x < right && box.x + box.w > left)
+  const across = gridOf(boxes).acrossColumns(left, right)
   let lane = from
   // 每被一张卡挡住就挪到它下沿之下，再从头查一遍（挪下去可能又撞上别的卡）。
   for (let moved = true; moved; ) {
@@ -202,19 +204,29 @@ export function freeLane(boxes: readonly Rect[], x1: number, x2: number, from: n
   return lane
 }
 
-/** 贝塞尔流程线（`flowPath` 的那条）会不会压到哪张卡片（不算两头自己的卡）。 */
+/** 贝塞尔流程线（`flowPath` 的那条）会不会压到哪张卡片（不算 `skip` 里的——两头自己的卡）。 */
 export function flowBlocked(
   boxes: readonly Rect[],
   sx: number,
   sy: number,
   tx: number,
   ty: number,
+  skip: readonly Rect[] = [],
 ): boolean {
   const [c1x, c2x] = flowControls(sx, tx)
   const inset = 4
+  // 贝塞尔落在四个控制点的凸包内：先一次取出这条带子碰到的卡片，再逐采样点精判。
+  const candidates = gridOf(boxes).overlapping(
+    Math.min(sx, c1x, c2x, tx),
+    Math.min(sy, ty),
+    Math.max(sx, c1x, c2x, tx),
+    Math.max(sy, ty),
+  )
+  if (candidates.length === 0) return false
   const inside = (x: number, y: number): boolean =>
-    boxes.some(
+    candidates.some(
       (box) =>
+        !skip.includes(box) &&
         x > box.x + inset &&
         x < box.x + box.w - inset &&
         y > box.y + inset &&
@@ -241,10 +253,13 @@ export function nearestLane(
   x1: number,
   x2: number,
   around: number,
+  skip: readonly Rect[] = [],
 ): number {
   const gap = 18
   const [left, right] = x1 <= x2 ? [x1, x2] : [x2, x1]
-  const across = boxes.filter((box) => box.x < right && box.x + box.w > left)
+  const across = gridOf(boxes)
+    .acrossColumns(left, right)
+    .filter((box) => !skip.includes(box))
   const clear = (y: number): boolean =>
     across.every((box) => y <= box.y - gap || y >= box.y + box.h + gap)
   const candidates = [
@@ -389,12 +404,11 @@ export function orthoRoute(
   const e1: Point2 = [end.x + edx * STUB, end.y + edy * STUB]
   // 候选的竖道 / 横道：两头伸出去的点，加上附近每张卡片四边外侧。
   const reach = 200
-  const near = boxes.filter(
-    (box) =>
-      box.x < Math.max(s1[0], e1[0]) + reach &&
-      box.x + box.w > Math.min(s1[0], e1[0]) - reach &&
-      box.y < Math.max(s1[1], e1[1]) + reach &&
-      box.y + box.h > Math.min(s1[1], e1[1]) - reach,
+  const near = gridOf(boxes).overlapping(
+    Math.min(s1[0], e1[0]) - reach,
+    Math.min(s1[1], e1[1]) - reach,
+    Math.max(s1[0], e1[0]) + reach,
+    Math.max(s1[1], e1[1]) + reach,
   )
   // 结果只取决于两头和附近这几张卡：拖一张卡时，离它远的线每帧都是同样的输入，直接用上次的答案。
   const key = routeKey(start, end, near, startBox, endBox)
@@ -597,10 +611,12 @@ export function pointsBlocked(
   boxes: readonly Rect[],
   skip: readonly Rect[],
 ): boolean {
+  const grid = gridOf(boxes)
   for (let index = 1; index < points.length; index += 1) {
     const a = points[index - 1] as Point2
     const b = points[index] as Point2
-    if (boxes.some((box) => !skip.includes(box) && segmentHits(a, b, box, 2))) return true
+    if (grid.alongSegment(a, b, 2).some((box) => !skip.includes(box) && segmentHits(a, b, box, 2)))
+      return true
   }
   return false
 }
@@ -631,6 +647,14 @@ export function bezierBlocked(
   }
   const [c1x, c1y] = control(from, to)
   const [c2x, c2y] = control(to, from)
+  // 同 flowBlocked：先按控制点凸包取候选，再逐点精判。
+  const candidates = gridOf(boxes).overlapping(
+    Math.min(from.x, c1x, c2x, to.x),
+    Math.min(from.y, c1y, c2y, to.y),
+    Math.max(from.x, c1x, c2x, to.x),
+    Math.max(from.y, c1y, c2y, to.y),
+  )
+  if (candidates.length === 0) return false
   for (let index = 2; index < 48; index += 1) {
     const t = index / 50
     const u = 1 - t
@@ -638,7 +662,7 @@ export function bezierBlocked(
     const y = u ** 3 * from.y + 3 * u * u * t * c1y + 3 * u * t * t * c2y + t ** 3 * to.y
     // 两头自己的卡片只在线的两端豁免：绕一圈又压回自己的卡片上同样算挡路。
     const ends = t < 0.12 || t > 0.88
-    const hit = boxes.some(
+    const hit = candidates.some(
       (box) =>
         !(ends && skip.includes(box)) &&
         x > box.x &&

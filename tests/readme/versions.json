@@ -73,6 +73,28 @@
         "tag": "Beta",
         "lines": ["Boards, logs, tables", "Replay every round"]
       }
+    },
+    {
+      "version": "0.10.0",
+      "zh": {
+        "title": "稳固顺手",
+        "lines": ["列表折叠、读取更快", "一块出错不拖垮整页"]
+      },
+      "en": {
+        "title": "Solid & snappy",
+        "lines": ["Folded, faster lists", "Errors stay contained"]
+      }
+    },
+    {
+      "version": "0.11.0",
+      "zh": {
+        "title": "大图流畅",
+        "lines": ["四百步满帧拖拽", "打开快两倍"]
+      },
+      "en": {
+        "title": "Smooth at scale",
+        "lines": ["400 steps at 60fps", "Opens twice as fast"]
+      }
     }
   ]
 }

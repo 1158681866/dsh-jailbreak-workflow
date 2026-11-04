@@ -202,6 +202,126 @@
           }
         ]
       }
+    },
+    "0.10.0": {
+      "zh": {
+        "headline": "图多的时候更稳、更顺手",
+        "items": [
+          {
+            "icon": "library",
+            "tone": "blue",
+            "title": "列表折叠",
+            "text": "最近 12 个，其余收进显示全部"
+          },
+          {
+            "icon": "reload",
+            "tone": "green",
+            "title": "刷新更快",
+            "text": "图没变的不再重读一遍"
+          },
+          {
+            "icon": "info",
+            "tone": "gold",
+            "title": "错误隔离",
+            "text": "一块出错不拖垮整个页面"
+          },
+          {
+            "icon": "search",
+            "tone": "teal",
+            "title": "改键名有提示",
+            "text": "打错的字段会被指出来"
+          }
+        ]
+      },
+      "en": {
+        "headline": "Steadier and snappier with many graphs",
+        "items": [
+          {
+            "icon": "library",
+            "tone": "blue",
+            "title": "Folded lists",
+            "text": "Most recent 12, rest folded"
+          },
+          {
+            "icon": "reload",
+            "tone": "green",
+            "title": "Faster refresh",
+            "text": "Only changed graphs reread"
+          },
+          {
+            "icon": "info",
+            "tone": "gold",
+            "title": "Contained errors",
+            "text": "One view fails, not the page"
+          },
+          {
+            "icon": "search",
+            "tone": "teal",
+            "title": "Clearer checks",
+            "text": "Misspelled keys are flagged"
+          }
+        ]
+      }
+    },
+    "0.11.0": {
+      "zh": {
+        "headline": "四百步的工作流也不卡了",
+        "items": [
+          {
+            "icon": "rocket",
+            "tone": "blue",
+            "title": "拖拽满帧",
+            "text": "四百步，每帧 17 毫秒"
+          },
+          {
+            "icon": "search",
+            "tone": "green",
+            "title": "走线更快",
+            "text": "空间网格，不再遍历全表"
+          },
+          {
+            "icon": "moon",
+            "tone": "gold",
+            "title": "动时省力",
+            "text": "阴影动效暂歇，停手即回"
+          },
+          {
+            "icon": "clock",
+            "tone": "teal",
+            "title": "打开更快",
+            "text": "切图从 1.3 秒到 0.5 秒"
+          }
+        ]
+      },
+      "en": {
+        "headline": "400-step workflows no longer stutter",
+        "items": [
+          {
+            "icon": "rocket",
+            "tone": "blue",
+            "title": "Full-frame drag",
+            "text": "400 steps, 17 ms a frame"
+          },
+          {
+            "icon": "search",
+            "tone": "green",
+            "title": "Faster routing",
+            "text": "Spatial grid, not full scans"
+          },
+          {
+            "icon": "moon",
+            "tone": "gold",
+            "title": "Lighter in motion",
+            "text": "Shadows pause, snap back"
+          },
+          {
+            "icon": "clock",
+            "tone": "teal",
+            "title": "Opens faster",
+            "text": "Switching: 1.3 s to 0.5 s"
+          }
+        ]
+      }
     }
   }
 }

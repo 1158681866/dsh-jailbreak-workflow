@@ -460,6 +460,14 @@ export const RUN_TEXT: Record<NodeStatus, LocaleKey> = {
   skipped: 'run.status.skipped',
 }
 
+/**
+ * 超过这么多节点才开视口剔除。
+ *
+ * 剔除本身要 React Flow 每帧算一遍可见集合；小图上这笔开销比省下的渲染还大，
+ * 而小图本来就满帧。150 是实测的交叉点（tests/runs/perf-*.txt）。
+ */
+const VISIBLE_CULL_OVER = 150
+
 const NO_HANDLES: readonly string[] = []
 
 /** 用户开了「减少动态效果」：滚轮缩放直接到位。 */
@@ -2032,6 +2040,8 @@ export function Canvas(props: CanvasProps): React.JSX.Element {
   const wrapRef = useRef<HTMLDivElement>(null)
   /** 卡片尺寸量出来 / 变了就加一：线的走法要按真实尺寸重算。 */
   const [sized, setSized] = useState(0)
+  /** 视口 / 卡片在动：根元素挂 `data-moving`，CSS 走低成本分支（GPU 负载均衡，见 canvas.module.css）。 */
+  const canvasMoving = useCanvasMoving()
   /** 拖动中的临时坐标（松手才写进文档）。 */
   const [dragging, setDragging] = useState<Record<string, Point>>({})
   const draggingRef = useRef(dragging)
@@ -2303,9 +2313,10 @@ export function Canvas(props: CanvasProps): React.JSX.Element {
         let lane: number | undefined
         if (to.x >= sx + 8) {
           // 往右走：贝塞尔压到中间的卡片（跨列时常见）才改走直角，挑离终点那一行最近的走廊。
-          const others = boxes.filter((box) => box !== from && box !== to)
-          if (flowBlocked(others, sx, sy, to.x, ty)) {
-            lane = nearestLane(others, sx + LOOP_REACH, to.x - ROUTE_PAD, ty)
+          // 传全表 + 两头做 skip：每边新建 others 数组会让网格缓存逐边失效。
+          const skip = [from, to]
+          if (flowBlocked(boxes, sx, sy, to.x, ty, skip)) {
+            lane = nearestLane(boxes, sx + LOOP_REACH, to.x - ROUTE_PAD, ty, skip)
           }
         } else {
           lane = freeLane(boxes, to.x - ROUTE_PAD, sx + LOOP_REACH, laneStart(sy, ty))
@@ -2978,6 +2989,8 @@ export function Canvas(props: CanvasProps): React.JSX.Element {
       // tabIndex=-1：可被脚本/点击聚焦从而收到键盘事件，但不进 Tab 序。
       tabIndex={-1}
       data-testid="wl-canvas"
+      // 视口 / 卡片在动：给 CSS 一个低成本分支（见 canvas.module.css 的「GPU 负载均衡」）。
+      data-moving={canvasMoving || undefined}
       data-drag={drag?.kind ?? undefined}
       style={drag === null ? undefined : ({ '--wl-drag': drag.color } as React.CSSProperties)}
       data-inset-right={props.insets.right}
@@ -3016,6 +3029,9 @@ export function Canvas(props: CanvasProps): React.JSX.Element {
               connectionRadius={28}
               connectionLineComponent={ConnectionLine}
               proOptions={{ hideAttribution: true }}
+              // 图大到一定程度才做视口剔除：React Flow 自带的这套会按视口挂/摘节点 DOM，
+              // 小图上看不出收益，反而多一次判断。150 步以上收益明显（见 tests/cdp-perf.mjs）。
+              onlyRenderVisibleElements={doc.nodes.length > VISIBLE_CULL_OVER}
               onNodesChange={onNodesChange}
               // 两头的连接点分工要对得上（见 model/connect.ts）：不连自己、资源不连资源、
               // 步骤右边只连步骤、步骤底边只连资源、资源只连步骤。

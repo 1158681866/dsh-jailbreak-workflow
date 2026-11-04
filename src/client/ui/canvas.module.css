@@ -1,3 +1,39 @@
+/* ── GPU 负载均衡 ──────────────────────────────────────────────
+   思路：画布静着的时候该好看的都好看；一旦在动（拖卡片、平移、缩放），
+   把「每帧都要重算」的合成开销先让出去，停手立刻恢复。
+
+   为什么是这几样：
+   - `box-shadow` 在卡片移动时每帧重绘，是合成器上最贵的一项；静止时的悬停阴影保留原样。
+   - `filter` / `backdrop-filter` 强制离屏合成，移动时等于每帧重算一整层模糊。
+   - `will-change` 只在移动期间给，停手就撤：常驻会占显存，节点多了反而更慢。
+
+   **不做的**：不给每张卡加 `will-change: transform`。400 张卡各建一层合成层就是显存炸弹，
+   实测启动与平移都会更慢——需要的是少建层，不是多建。 */
+:where(.wrap[data-moving]) .card::before,
+:where(.wrap[data-moving]) .resCard::before,
+:where(.wrap[data-moving]) .inputCard::before {
+  /* 拖起来时的悬浮阴影：移动期间先不画，松手立刻回来。 */
+  opacity: 0;
+}
+
+:where(.wrap[data-moving]) .card,
+:where(.wrap[data-moving]) .resCard,
+:where(.wrap[data-moving]) .inputCard {
+  /* 卡片上的过渡（transform / opacity / border-color）在移动期间没必要跑。 */
+  transition: none;
+}
+
+:where(.wrap[data-moving]) :global(.react-flow__edge-path) {
+  /* 连线路径的描边动效（虚线流动）跟着停，线本身照画。 */
+  animation-play-state: paused;
+}
+
+/* 正在被拖的那一张卡：只给它单独提一层，让它走合成器，不重排其他卡。
+   用 React Flow 自己挂的 `.dragging`（挂在节点容器上），不是卡片元素。 */
+:where(.wrap[data-moving]) :global(.react-flow__node.dragging) {
+  will-change: transform;
+}
+
 /**
  * dsh-workflow-lite — 画布：步骤卡、连接点、连线、拖放占位、空态。
  *
