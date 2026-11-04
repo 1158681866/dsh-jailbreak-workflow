@@ -10,15 +10,6 @@
 
 简体中文 | [English](./README.en.md)
 
-</div>
-
-<div align="center">
-
-[![node](https://img.shields.io/badge/node-22%2B-339933.svg)](https://nodejs.org)
-[![DeepSeek Harness 0.2.x](https://img.shields.io/badge/DeepSeek%20Harness-0.2.x-4d6bfe.svg)](https://github.com/deepseek-ai/deepseek-harness)
-[![工作流合集](https://img.shields.io/badge/%E5%B7%A5%E4%BD%9C%E6%B5%81%E5%90%88%E9%9B%86-dsh--workflows-3e7ce4.svg)](https://github.com/Minglink/dsh-workflows)
-
-</div>
 
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的软工作流插件：**在画布上设计流程，编译成一份计划提示词，交给模型按计划执行。**
 
