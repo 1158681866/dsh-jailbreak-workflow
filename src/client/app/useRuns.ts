@@ -52,6 +52,43 @@ export function runPollMs(view: InstanceView | null): number {
     : RUN_POLL_MS
 }
 
+/** 两份值一样就留着旧的那份（保持引用，让下游 memo 不重算）。 */
+function sameJson<T>(previous: T, next: T): boolean {
+  if (previous === next) return true
+  if (previous === null || previous === undefined || next === null || next === undefined) {
+    return previous === next
+  }
+  return JSON.stringify(previous) === JSON.stringify(next)
+}
+
+/**
+ * 全量重读合回旧视图：内容没变的字段留着旧对象（`document`、`state`、`files`、`answers`），
+ * 只有真的变了的才换。轮询空转时每个字段都留旧引用，直接返回 `previous`——React 连渲染都跳过。
+ */
+function mergeView(previous: InstanceView, result: InstanceView): InstanceView {
+  const pick = <K extends keyof InstanceView>(field: K): InstanceView[K] =>
+    previous[field] === result[field] || sameJson(previous[field], result[field])
+      ? previous[field]
+      : result[field]
+  const state = pick('state')
+  const document = pick('document')
+  const files = pick('files')
+  const answers = pick('answers')
+  const issues = pick('issues')
+  const summary = pick('summary')
+  if (
+    state === previous.state &&
+    document === previous.document &&
+    files === previous.files &&
+    answers === previous.answers &&
+    issues === previous.issues &&
+    summary === previous.summary
+  ) {
+    return previous
+  }
+  return { summary, document, state, issues, mtime: result.mtime, files, answers }
+}
+
 export interface Runs {
   /** 本会话的实例（新的在前）。 */
   list: InstanceSummary[]
@@ -276,6 +313,10 @@ export function useRun(
   const [stacks, setStacks] = useState<DraftStacks>({ past: [], future: [], seq: 0 })
   const stacksRef = useRef(stacks)
   stacksRef.current = stacks
+  // 调用方每次渲染传新的闭包（`() => void runs.refresh()`）：走 ref 存最新，
+  // `save` 的引用才不会跟着每次渲染都换掉整条下游 memo。
+  const onSavedRef = useRef(onSaved)
+  onSavedRef.current = onSaved
 
   /** 换掉草稿，撤销栈另说（refs 先改，同一次事件里接着改也看得到）。 */
   const putDraft = useCallback((next: StateEdit[]): void => {
@@ -335,14 +376,18 @@ export function useRun(
         })
         if ('unchanged' in result) return
         mtime.current = result.mtime
-        setView(result)
+        // 全量重读每 RUN_FULL_EVERY 轮跑一次；内容没变时交回上一份的同一对象。
+        // 不换身份，画布的装饰链（decor、taken 边、展示卡）就不会被一次空轮询整条重算。
+        setView((previous) => (previous === null ? result : mergeView(previous, result)))
         setError(null)
         const state = result.state
         if (state === null) return
-        setLastGood(state)
+        setLastGood((previous) => (sameJson(previous, state) ? previous : state))
         const rebased = rebase(draftRef.current, state)
         if (rebased.draft.length !== draftRef.current.length) resetDraft(rebased.draft)
-        setConflicts(rebased.conflicts)
+        setConflicts((previous) =>
+          sameJson(previous, rebased.conflicts) ? previous : rebased.conflicts,
+        )
         if (saved.current.length > 0) {
           const reverted = saved.current.filter((edit) =>
             sameValue(valueAt(state, edit.path), edit.from),
@@ -515,7 +560,7 @@ export function useRun(
                 : t('run.savedPending'),
         )
         await load(true)
-        onSaved?.()
+        onSavedRef.current?.()
         return result
       } catch (caught) {
         if (
@@ -533,10 +578,12 @@ export function useRun(
         setSaving(false)
       }
     },
-    [rpc, id, session, note, notify, saving, flash, t, load, onSaved, resetDraft],
+    [rpc, id, session, note, notify, saving, flash, t, load, resetDraft],
   )
 
   const shown = useMemo(() => (base === null ? null : applyDraft(base, draft)), [base, draft])
+  // 稳定的 `reload`：RunView 把它挂进顶栏的 effect 里，每次渲染换引用会拆装那个 effect。
+  const reload = useCallback((): Promise<void> => load(true), [load])
   const draftHistory = useMemo<SideHistory>(
     () => ({ past: stacks.past.length, future: stacks.future.length, seq: stacks.seq }),
     [stacks],
@@ -569,6 +616,6 @@ export function useRun(
     dropDraftRedo,
     discard,
     save,
-    reload: () => load(true),
+    reload,
   }
 }

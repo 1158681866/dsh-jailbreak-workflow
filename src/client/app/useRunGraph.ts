@@ -10,7 +10,15 @@
  * @module @xiaoso/dsh-workflow-lite/client/app/useRunGraph
  */
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from 'react'
 import { type GraphChange, graphChanges } from '../../shared/graphDiff.ts'
 import type { ValidationProblem, WorkflowDocument } from '../../shared/types.ts'
 import { validateDocument } from '../../shared/validate.ts'
@@ -28,6 +36,8 @@ export interface RunGraph {
   selection: Selection
   /** 比基线改了什么（一处一项，按 `shared/graphDiff.ts` 数）。 */
   changes: GraphChange[]
+  /** 图改过没有：只比引用、不延迟（`changes` 是 deferred 的，保存这类判断不要用它）。 */
+  dirty: boolean
   /** 改完的图保存不了的问题（保存级、编译级；没改过图时为空）：保存按钮按住。 */
   problems: ValidationProblem[]
   /** 这张图的全部检查结果（四级，和模板同一套规则）：顶栏的检查结果、画布上的标记。 */
@@ -121,16 +131,29 @@ export function useRunGraph(
     writeStored(id, doc === current.doc ? null : { base: current.planId, doc })
   }, [id, current, doc])
 
+  // 检查和差异都比整张图（建索引、找环、排批次、逐条比对）：打字时文档每敲一个字就换引用，
+  // 跟着重算会把键入拖慢。用 deferred 值：输入框先照常回显，检查在打字停下来的那一拍追上。
+  const settledDoc = useDeferredValue(doc)
+  /**
+   * 「图改过没有」的不延迟版本：只比引用，几乎不要钱。
+   *
+   * `changes` 是 deferred 的（打字时可能还停在上一拍），拿它决定「保存要不要带上新图」
+   * 会在打完字立刻点保存时漏掉刚敲的那个字。要判断有没有改动，问这里。
+   */
+  const dirty = current !== null && doc !== null && doc !== current.doc
   const changes = useMemo(
-    () => (current === null || doc === null ? [] : graphChanges(current.doc, doc)),
-    [current, doc],
+    () => (current === null || settledDoc === null ? [] : graphChanges(current.doc, settledDoc)),
+    [current, settledDoc],
   )
   const checked = useMemo(
     () =>
-      doc === null
+      settledDoc === null
         ? null
-        : validateDocument(doc, { workflowName: workflow ?? 'workflow', maxNodes: NO_LIMIT }),
-    [doc, workflow],
+        : validateDocument(settledDoc, {
+            workflowName: workflow ?? 'workflow',
+            maxNodes: NO_LIMIT,
+          }),
+    [settledDoc, workflow],
   )
   const report = useMemo(
     () =>
@@ -140,8 +163,10 @@ export function useRunGraph(
     [checked],
   )
   const problems = useMemo(
-    () => (checked === null || changes.length === 0 ? [] : [...checked.save, ...checked.compile]),
-    [checked, changes.length],
+    // 改过图才拦保存（没改过就是建实例时那张，不该拦着改状态）。
+    // 判「改过没有」用 dirty：changes 是 deferred 的，拿它当门会让刚打的字短暂漏过检查。
+    () => (checked === null || !dirty ? [] : [...checked.save, ...checked.compile]),
+    [checked, dirty],
   )
   const history = useMemo<SideHistory>(
     () => ({ past: state.past.length, future: state.future.length, seq: state.historySeq }),
@@ -184,6 +209,8 @@ export function useRunGraph(
     basePlan: current?.planId ?? null,
     selection: current === null ? null : state.selection,
     changes,
+    /** 图改过没有（不延迟：保存、挡住提示这些判断用它，见上面 `dirty` 的说明）。 */
+    dirty,
     problems,
     report,
     history,

@@ -52,7 +52,7 @@ import { useRunGraph } from '../app/useRunGraph.ts'
 import { useRunHistory } from '../app/useRunHistory.ts'
 import { type Run, type Runs, runPollMs, useRun } from '../app/useRuns.ts'
 import type { T } from '../i18n.ts'
-import { type Edit, findNode } from '../model/editor.ts'
+import { type Edit, findNode, type Selection } from '../model/editor.ts'
 import { fileBaseName } from '../model/fileKind.ts'
 import { NODE_H, NODE_W, placeMissing, tidy } from '../model/layout.ts'
 import type { StepSource } from '../model/library.ts'
@@ -144,6 +144,8 @@ const GAP = 12
 const MENU_W = 220
 
 const TYPING = new Set(['INPUT', 'TEXTAREA', 'SELECT'])
+/** 实例视图没有「从空白开始」那张引导卡：给画布一个稳定的空回调（换引用会整图重建）。 */
+const noop = (): void => {}
 
 /**
  * 实例的快照：只在换实例、或图存了新的一版（planId 变了）时换，轮询不让画布重建。
@@ -345,8 +347,26 @@ export function RunView(props: RunViewProps): React.JSX.Element {
     [doc, analysis, shown, draft],
   )
 
+  /** 上一次算出来的「走过的线」：内容没变就沿用同一个 Set（见 `decor`）。 */
+  const takenRef = useRef<Set<string> | null>(null)
   const decor = useMemo<RunDecor | undefined>(() => {
     if (doc === null) return undefined
+    /** 上一次算出来的「走过的线」：内容一样就交回同一个 Set，画布的连线缓存才不用整批重建。 */
+    const kept = takenRef.current
+    const take = (next: Set<string>): Set<string> => {
+      if (kept !== null && kept.size === next.size) {
+        let sameSet = true
+        for (const id of next) {
+          if (!kept.has(id)) {
+            sameSet = false
+            break
+          }
+        }
+        if (sameSet) return kept
+      }
+      takenRef.current = next
+      return next
+    }
     const onStatus = (nodeId: string, anchor: Element): void => {
       if (fresh(nodeId)) {
         current.flash('ok', t('run.freshStep'))
@@ -368,7 +388,7 @@ export function RunView(props: RunViewProps): React.JSX.Element {
     if (shown === null) {
       return {
         nodes: {},
-        taken: new Set(doc.edges.map((edge) => edge.id)),
+        taken: take(new Set(doc.edges.map((edge) => edge.id))),
         files: {},
         onStatus,
       }
@@ -387,7 +407,7 @@ export function RunView(props: RunViewProps): React.JSX.Element {
     }
     return {
       nodes,
-      taken: takenEdges(doc, shown),
+      taken: take(takenEdges(doc, shown)),
       files: current.view?.files ?? {},
       onStatus,
     }
@@ -447,12 +467,22 @@ export function RunView(props: RunViewProps): React.JSX.Element {
     },
     [locked, current.flash, t, graph.edit, onPanel],
   )
+  /**
+   * `addStep` 读当前的图（`doc`），但它的引用必须是稳的：它一路传到画布的 `onDropSource`，
+   * 而画布把它算进节点缓存的依赖里——`doc` 每敲一个字都换引用，回调跟着换就会整图重建。
+   * 用 ref 取最新的值，回调本身只建一次。
+   */
+  const addStepRef = useRef<(from: StepSource, position: Point, after?: string) => Promise<void>>(
+    async () => {},
+  )
+  addStepRef.current = async (from, position, after) => {
+    setFocusPrompt(from.kind === 'blank')
+    await addFromSource({ t, doc, edit, loadTemplate: props.loadTemplate }, from, position, after)
+  }
   const addStep = useCallback(
-    async (from: StepSource, position: Point, after?: string): Promise<void> => {
-      setFocusPrompt(from.kind === 'blank')
-      await addFromSource({ t, doc, edit, loadTemplate: props.loadTemplate }, from, position, after)
-    },
-    [t, doc, edit, props.loadTemplate],
+    (from: StepSource, position: Point, after?: string): Promise<void> =>
+      addStepRef.current(from, position, after),
+    [],
   )
   const requestAdd = useCallback((request: AddRequest): void => {
     const root = canvasRef.current?.closest('[data-testid="wl-root"]')
@@ -464,6 +494,26 @@ export function RunView(props: RunViewProps): React.JSX.Element {
       bounds: { width: rect.width, height: rect.height },
     })
   }, [])
+  /**
+   * 交给画布的回调一律稳定引用：它们是节点缓存的一部分，换一次引用整张图的节点与连线
+   * 就全部重建（几百张卡）。需要的活走 ref / 依赖已稳定的 useCallback。
+   */
+  const selectNode = useCallback(
+    (next: Selection): void => {
+      // 点中东西：右栏打开看它；点空白处：右栏收起（和模板一样）。
+      setFocusPrompt(false)
+      select(next)
+      setMenu(null)
+      onPanel(next !== null)
+    },
+    [select, onPanel],
+  )
+  const dropSource = useCallback(
+    (from: StepSource, at: Point): void => {
+      void addStep(from, at)
+    },
+    [addStep],
+  )
   /** 复制之后右栏盖住了新节点，就把画布挪一点（右栏随加东西自动打开）。 */
   const armArrival = useArrival(selection?.kind === 'node' ? selection.id : null, (nodeId) =>
     revealNode({
@@ -620,7 +670,8 @@ export function RunView(props: RunViewProps): React.JSX.Element {
       : t('run.stateMismatch').replace('{p}', `${issue.path} ${issue.message}`)
   }, [graph.problems, graph.changes.length, shown, facts, t])
   const save = (): void => {
-    const changed = graph.changes.length > 0 && graph.doc !== null && graph.basePlan !== null
+    // 用 dirty 而不是 changes.length：changes 是 deferred 的，刚打完字的那一拍可能还没追上。
+    const changed = graph.dirty && graph.doc !== null && graph.basePlan !== null
     void current
       .save(
         changed && graph.doc !== null && graph.basePlan !== null
@@ -688,16 +739,10 @@ export function RunView(props: RunViewProps): React.JSX.Element {
             insets={insets}
             onEdit={edit}
             onSeal={graph.seal}
-            onSelect={(next) => {
-              // 点中东西：右栏打开看它；点空白处：右栏收起（和模板一样）。
-              setFocusPrompt(false)
-              select(next)
-              setMenu(null)
-              onPanel(next !== null)
-            }}
+            onSelect={selectNode}
             onRequestAdd={requestAdd}
-            onDropSource={(from, at) => void addStep(from, at)}
-            onStarter={() => {}}
+            onDropSource={dropSource}
+            onStarter={noop}
             {...(props.onSettled === undefined ? {} : { onSettled: props.onSettled })}
             focusFile={focusFile}
             onFocusFile={setFocusFile}
@@ -959,15 +1004,17 @@ function RunPanel(props: {
   const summary = current.view?.summary
   const made = current.view?.files ?? {}
   const answers = current.view?.answers
-  const labelOf = (id: string): string => {
-    const node = doc.nodes.find((candidate) => idKey(candidate.id) === idKey(id))
-    return node !== undefined &&
-      isStep(node) &&
-      node.data.label !== undefined &&
-      node.data.label !== ''
-      ? node.data.label
-      : id
-  }
+  // 步骤 id → 名字：右栏的概览、清单里逐行都要用，一次建表比每行线性扫一遍便宜
+  // （几百步的实例、加上列表本身就在滚的时候，那个扫描是 O(n²)）。
+  const labelOf = useMemo(() => {
+    const names = new Map<string, string>()
+    for (const node of doc.nodes) {
+      if (isStep(node) && node.data.label !== undefined && node.data.label !== '') {
+        names.set(idKey(node.id), node.data.label)
+      }
+    }
+    return (id: string): string => names.get(idKey(id)) ?? id
+  }, [doc.nodes])
   const viewPath = (path: string): void => props.onView({ path }, fileBaseName(path))
   // 标题栏和「编辑」那边是同一个（同样能改名字、换外观），两边切换时不动。
   const headProps = {

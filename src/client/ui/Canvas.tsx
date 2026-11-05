@@ -2014,11 +2014,41 @@ interface EdgeCacheEntry {
   flow: FlowEdge
 }
 
-/** 连线对象的指纹：除了回调与翻译函数（它们换了就整份缓存作废，见 `edges`）。 */
+/**
+ * 连线对象的指纹：只拼会变的原始量，不再整对象 stringify——
+ * 拖卡片时每帧几百条边，序列化是主线程上白烧的大头。
+ * 回调与翻译函数不在里面（它们换了就整份缓存作废，见 `edges`）。
+ */
 function edgeSignature(edge: FlowEdge): string {
-  return JSON.stringify(edge, (key, value) =>
-    key === 't' || key === 'onPick' || key === 'acts' ? undefined : value,
-  )
+  const data = edge.data as Record<string, unknown> | undefined
+  // className 装着 selected/active/dim/back 这些画在类上的量，直接取整串比再拆一遍便宜。
+  const base = `${edge.type}|${edge.source}|${edge.target}|${edge.sourceHandle ?? ''}|${edge.targetHandle ?? ''}|${edge.className ?? ''}|${edge.selected ?? false}`
+  if (data === undefined) return base
+  const points = data.points as [number, number][] | null | undefined
+  const laneShift = data.shift as { out: number; in: number } | null | undefined
+  if (edge.type === 'wfEdge') {
+    const handoff = data.handoff as { none: boolean; note?: string } | null
+    return [
+      base,
+      data.back ?? false,
+      data.when ?? '',
+      data.text ?? '',
+      data.color ?? '',
+      data.route ?? '',
+      handoff === null ? '' : `${handoff.none}:${handoff.note ?? ''}`,
+      data.lane ?? '',
+      laneShift == null ? '' : `${laneShift.out}:${laneShift.in}`,
+      data.labelX ?? '',
+    ].join('|')
+  }
+  return [
+    base,
+    data.color ?? '',
+    data.access ?? '',
+    data.cardH ?? 0,
+    data.chipText ?? '',
+    points === null || points === undefined ? '' : points.map((p) => `${p[0]},${p[1]}`).join(' '),
+  ].join('|')
 }
 
 export function Canvas(props: CanvasProps): React.JSX.Element {
@@ -2052,7 +2082,8 @@ export function Canvas(props: CanvasProps): React.JSX.Element {
   useEffect(() => () => setCanvasMoving(false), [])
   /** React Flow 量出来的卡片尺寸：带回给它，重建节点对象时就不用重新量。 */
   const measured = useRef(new Map<string, { width: number; height: number }>())
-  const cache = useRef(new Map<string, CacheEntry>())
+  // 缓存里存的是建好的卡片对象，签名只拼会画的量、不含静态文案；换了语言（t 变引用）整批作废。
+  const cache = useRef({ t, map: new Map<string, CacheEntry>() })
   const edgeCache = useRef({
     t,
     onPick: null as unknown,
@@ -2265,6 +2296,28 @@ export function Canvas(props: CanvasProps): React.JSX.Element {
   )
 
   /**
+   * 走线几何的指纹：位置、卡片尺寸、节点种类、连线两端与条件。
+   *
+   * 只跟这些有关——改提示词、改说明、改状态都不会动线。打字时文档每敲一个字就换引用，
+   * 没有这道门，几百张卡的走线与分道每帧都要重跑一遍（这是键入卡顿的大头）。
+   * 尺寸本身就是 `cardSize()` 的结果，所以凡影响卡大小的字段（内容项数、展示设置）都在里面。
+   */
+  const layoutKey = useMemo(() => {
+    const nodes = doc.nodes.map((node) => {
+      const size = cardSize(node)
+      const kind = isInput(node) ? 'i' : isResource(node) ? 'r' : 's'
+      return `${node.id}~${kind}~${node.position.x},${node.position.y}~${size.w},${size.h}`
+    })
+    const edges = doc.edges.map(
+      (edge) =>
+        `${edge.id}~${edge.source}~${edge.target}~${edge.data?.update === true ? 'u' : 's'}~${
+          whenOf(edge) ?? ''
+        }`,
+    )
+    return `${nodes.join(';')}#${edges.join(';')}`
+  }, [doc])
+
+  /**
    * 每条读写线挂在哪两个连接点上（按两张卡当下的位置挑，见 model/route.ts），
    * 以及每张卡上哪些点挂着线（备用的点只有挂上线才显示）。拖动中的卡按临时坐标算，线实时换点。
    */
@@ -2436,9 +2489,12 @@ export function Canvas(props: CanvasProps): React.JSX.Element {
     }
     const labels = placeChips(chips)
     return { handles, used, lanes, bends, shifts, labels }
-  }, [doc, dragging, sized])
+    // 依赖写 layoutKey 而不是 doc：几何没变就不重跑（见上面那道门的说明）。
+  }, [layoutKey, dragging, sized])
 
   const nodes = useMemo<FlowNode[]>(() => {
+    if (cache.current.t !== t) cache.current = { t, map: new Map() }
+    const previous = cache.current.map
     const next = new Map<string, CacheEntry>()
     const selectedId = selection?.kind === 'node' ? idKey(selection.id) : null
     const list = doc.nodes.map((node): FlowNode => {
@@ -2533,6 +2589,9 @@ export function Canvas(props: CanvasProps): React.JSX.Element {
         const description = (node.data.description ?? '').replace(/\s+/gu, ' ').trim()
         const shownView = memory === undefined ? displayOf(node.data) : null
         const shownItem = shownView === null ? undefined : all[shownView.item]
+        /** 写这个资源的某一步正在跑（展示卡上要扫光带）。 */
+        const writing =
+          info?.writers.some((writer) => run?.nodes[writer.id]?.status === 'running') === true
         const display: CardDisplay | null =
           shownView === null || shownItem === undefined || node.data.view === undefined
             ? null
@@ -2540,9 +2599,7 @@ export function Canvas(props: CanvasProps): React.JSX.Element {
                 info: shownView,
                 item: shownItem,
                 view: node.data.view,
-                writing:
-                  info?.writers.some((writer) => run?.nodes[writer.id]?.status === 'running') ===
-                  true,
+                writing,
                 made: made === undefined ? null : (made[shownView.item] ?? null),
                 ext:
                   shownItem.kind === 'file'
@@ -2554,6 +2611,7 @@ export function Canvas(props: CanvasProps): React.JSX.Element {
                 resizeText: texts.displayResize,
                 zoomText: texts.displayZoomTag,
               }
+        const tint = resourceTint(node.data)
         const data: ResourceCardData = {
           compact,
           title,
@@ -2568,7 +2626,7 @@ export function Canvas(props: CanvasProps): React.JSX.Element {
           memory: memory === undefined ? null : memory.type === 'workflow' ? 'global' : 'step',
           memoryShared:
             others.length === 0 ? null : texts.memShared.replace('{n}', String(others.length)),
-          tint: resourceTint(node.data),
+          tint,
           shared,
           sharedText: texts.resShared,
           tone,
@@ -2581,7 +2639,39 @@ export function Canvas(props: CanvasProps): React.JSX.Element {
           display,
           onView,
         }
-        signature = JSON.stringify([selected, used, { ...data, onFocusFile: null, onView: null }])
+        // 指纹 = 卡片上真正会画出来的量：逐项拼原始值，不再整份 stringify。
+        // 拖卡片时每帧几百张卡，序列化 + 整对象克隆是主线程上白烧的大头。
+        // 文案派生（texts.*）不在这里：memo 依赖带 texts，引用一换整批重建。
+        const viewSig =
+          shownView === null
+            ? ''
+            : `${shownView.item}|${shownView.kind}|${shownView.width}|${shownView.height}|${shownView.zoom}|${shownView.fit}|${shownView.adapt}|${shownView.hideTitle}|${shownView.look ?? ''}`
+        signature = [
+          selected,
+          used.join(','),
+          tone,
+          note,
+          isFocus,
+          dim,
+          shared,
+          compact,
+          memory === undefined ? '' : memory.type,
+          title,
+          sub,
+          description,
+          others.length,
+          tint ?? '',
+          first?.kind ?? '',
+          ext,
+          all.length,
+          viewSig,
+          shownItem === undefined
+            ? ''
+            : `${shownItem.kind}|${shownItem.value}|${shownItem.note ?? ''}`,
+          writing,
+          made === undefined ? '' : made.join(','),
+          items.map((item) => `${item.kind}|${item.text}|${item.made}`).join(';'),
+        ].join('|')
         build = () => ({
           id: node.id,
           type: 'wfResource',
@@ -2641,24 +2731,28 @@ export function Canvas(props: CanvasProps): React.JSX.Element {
           },
         })
       }
-      const cached = cache.current.get(node.id)
-      if (
-        moving === undefined &&
-        cached !== undefined &&
-        cached.node === node &&
-        cached.signature === signature
-      ) {
+      const cached = previous.get(node.id)
+      const fresh = cached !== undefined && cached.node === node && cached.signature === signature
+      // 拖动中：坐标每帧变，但卡片内容没变——复用上一帧建好的 data，只换坐标，
+      // 不跑 build()（那会重新分配 data / display 对象）。松手后按文档新坐标重建再缓存。
+      if (moving !== undefined) {
+        if (fresh) return { ...cached.flow, position: moving }
+        const size = measured.current.get(node.id)
+        const built = build()
+        if (size !== undefined) built.measured = size
+        return built
+      }
+      if (fresh) {
         next.set(node.id, cached)
         return cached.flow
       }
       const size = measured.current.get(node.id)
       const built = build()
       if (size !== undefined) built.measured = size
-      // 拖动中的对象每帧都不同，不进缓存；松手后按文档里的新坐标重建一次再缓存。
-      if (moving === undefined) next.set(node.id, { node, signature, flow: built })
+      next.set(node.id, { node, signature, flow: built })
       return built
     })
-    cache.current = next
+    cache.current = { t, map: next }
     return list
   }, [
     doc.nodes,

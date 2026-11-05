@@ -56,8 +56,9 @@ function objectOf(node: WorkflowNode): Exclude<ChangeObject, 'edge' | 'layout'> 
   return 'step'
 }
 
+// 先比身份：改一处时绝大多数字段还是同一个对象，短路掉两次序列化。
 const same = (a: unknown, b: unknown): boolean =>
-  JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+  a === b || JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
 const text = (value: string | undefined): string => value?.trim() ?? ''
 
 /** 同一个节点两版之间改了哪些字段。 */
@@ -137,10 +138,17 @@ export function graphChanges(base: WorkflowDocument, next: WorkflowDocument): Gr
 
   // 连线：同 id 的直接比；剩下的按两端配对（改条件换了 id），再剩下的才是删掉 / 新加的。
   const oldEdges = new Map(base.edges.map((edge) => [edge.id, edge]))
-  const unmatchedOld = base.edges.filter((edge) => !next.edges.some((e) => e.id === edge.id))
+  const nextEdges = new Map(next.edges.map((edge) => [edge.id, edge]))
+  // 按 id 一次查表：连线多起来时这里本来是 O(E²) 的 some()。
+  const unmatchedOld = base.edges.filter((edge) => !nextEdges.has(edge.id))
   const removed: WorkflowEdge[] = []
   const pairs = new Map<string, WorkflowEdge[]>()
-  for (const edge of unmatchedOld) pairs.set(ends(edge), [...(pairs.get(ends(edge)) ?? []), edge])
+  for (const edge of unmatchedOld) {
+    const key = ends(edge)
+    const list = pairs.get(key)
+    if (list === undefined) pairs.set(key, [edge])
+    else list.push(edge)
+  }
   const edgeChanges: GraphChange[] = []
   for (const edge of next.edges) {
     const old = oldEdges.get(edge.id)
@@ -150,8 +158,9 @@ export function graphChanges(base: WorkflowDocument, next: WorkflowDocument): Gr
         edgeChanges.push({ object: 'edge', kind: 'changed', id: edge.id, fields })
       continue
     }
-    const candidates = pairs.get(ends(edge)) ?? []
-    const partner = candidates.shift()
+    const candidates = pairs.get(ends(edge))
+    // shift() 从头部取：让「第一条旧线配第一条新线」，和逐个 find 的顺序一致。
+    const partner = candidates?.shift()
     if (partner === undefined) {
       edgeChanges.push({ object: 'edge', kind: 'added', id: edge.id, fields: [] })
       continue
@@ -173,9 +182,10 @@ export function graphChanges(base: WorkflowDocument, next: WorkflowDocument): Gr
     changes.push({ object: 'edge', kind: 'removed', id: edge.id, fields: [] })
   }
   for (const change of edgeChanges) {
-    const edge = next.edges.find((candidate) => candidate.id === change.id)
-    if (change.kind === 'added' && edge !== undefined && (fresh(edge.source) || fresh(edge.target)))
-      continue
+    if (change.kind === 'added') {
+      const edge = nextEdges.get(change.id)
+      if (edge !== undefined && (fresh(edge.source) || fresh(edge.target))) continue
+    }
     changes.push(change)
   }
   if (moved.length > 0) changes.push({ object: 'layout', kind: 'changed', id: '', fields: moved })

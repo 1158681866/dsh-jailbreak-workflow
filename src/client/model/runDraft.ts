@@ -69,25 +69,54 @@ export function setField(
   return draft.map((edit) => (samePath(edit.path, path) ? next : edit))
 }
 
-/** 把草稿叠到状态上（画布显示的就是叠完的样子）。 */
+/**
+ * 把草稿叠到状态上（画布显示的就是叠完的样子）。
+ *
+ * 写时复制：只克隆草稿真正碰到的节点，没改的节点留着原引用——
+ * 画布按节点对象比身份，一次叠草稿不该让所有步骤卡重建。
+ */
 export function applyDraft(state: RunState, draft: readonly StateEdit[]): RunState {
   if (draft.length === 0) return state
-  const next: RunState = {
-    ...state,
-    nodes: Object.fromEntries(Object.entries(state.nodes).map(([id, node]) => [id, { ...node }])),
-  }
+  const touched = new Map<string, StateEdit[]>()
+  let hasTop = false
   for (const edit of draft) {
     if (edit.path.length === 1) {
+      hasTop = true
+      continue
+    }
+    const nodeId = edit.path[1] ?? ''
+    const list = touched.get(nodeId)
+    if (list === undefined) touched.set(nodeId, [edit])
+    else list.push(edit)
+  }
+  const nodes = { ...state.nodes }
+  let changed = false
+  for (const [id, edits] of touched) {
+    const node = state.nodes[id]
+    if (node === undefined) continue
+    const copy: NodeRunState = { ...node }
+    let touchedNode = false
+    for (const edit of edits) {
+      // 只认「nodes.<id>.<字段>」：短于三条的路径没有字段可写，跳过（别往 copy 上塞 undefined 键）。
+      if (edit.path.length < 3) continue
+      const field = edit.path[2] as keyof NodeRunState
+      if (edit.to === null) delete copy[field]
+      else (copy as unknown as Record<string, EditValue>)[field] = edit.to
+      touchedNode = true
+    }
+    if (!touchedNode) continue
+    nodes[id] = copy
+    changed = true
+  }
+  if (!hasTop && !changed) return state
+  const next: RunState = { ...state, nodes }
+  if (hasTop) {
+    for (const edit of draft) {
+      if (edit.path.length !== 1) continue
       const key = edit.path[0] as 'status' | 'note'
       if (edit.to === null) delete next[key]
       else (next as unknown as Record<string, EditValue>)[key] = edit.to
-      continue
     }
-    const node = next.nodes[edit.path[1] ?? '']
-    if (node === undefined) continue
-    const field = edit.path[2] as keyof NodeRunState
-    if (edit.to === null) delete node[field]
-    else (node as unknown as Record<string, EditValue>)[field] = edit.to
   }
   return next
 }

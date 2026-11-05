@@ -693,6 +693,24 @@ function Shell(props: {
     [t, wf, focusCanvas, state.doc, state.name, openMemoryPick],
   )
 
+  /**
+   * `addStep` 读当前的图（`state.doc`），但它的引用必须是稳的：它一路传到画布的
+   * `onDropSource`，而画布把它算进节点缓存的依赖里——`doc` 每敲一个字都换引用，
+   * 回调跟着换就会让整张图（几百张卡）重建。用 ref 取最新值，回调本身只建一次。
+   */
+  const addStepRef = useRef<(source: StepSource, position: Point, from?: string) => Promise<void>>(
+    async () => {},
+  )
+  addStepRef.current = addStep
+  const dropSource = useCallback((source: StepSource, at: Point): void => {
+    void addStepRef.current(source, at)
+  }, [])
+  const onSettled = useCallback((): void => setTemplateSettled(true), [])
+  const onStarter = useCallback((): void => {
+    wf.edit({ type: 'addGraph', ...starterGraph(t) })
+    fitSoon()
+  }, [wf.edit, t, fitSoon])
+
   const requestAdd = useCallback((request: AddRequest): void => {
     const root = rootRef.current
     if (root === null) return
@@ -985,12 +1003,9 @@ function Shell(props: {
                       onSeal={wf.seal}
                       onSelect={select}
                       onRequestAdd={requestAdd}
-                      onDropSource={(source, at) => void addStep(source, at)}
-                      onSettled={() => setTemplateSettled(true)}
-                      onStarter={() => {
-                        wf.edit({ type: 'addGraph', ...starterGraph(t) })
-                        fitSoon()
-                      }}
+                      onDropSource={dropSource}
+                      onSettled={onSettled}
+                      onStarter={onStarter}
                       focusFile={focusFile}
                       onFocusFile={onFocusFile}
                       onMemory={toggleMemory}
